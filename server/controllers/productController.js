@@ -1,29 +1,53 @@
 import Product from "../models/Product.js";
 
-// Add Product (Seller only)
+// Add Product - seller only
+//http://localhost:4000/api/product/add
 export const addProduct = async (req, res) => {
   try {
-    const { name, description, price } = req.body;
+    // Ensure sellerId from authSeller middleware
+    const sellerId = req.userId;
 
-    if (!name || !price) {
-      return res.status(400).json({ success: false, message: "Name and price are required" });
+    // Parse product data
+    if (!req.body.productData) {
+      return res.status(400).json({ success: false, message: "Missing product data" });
     }
 
+    const productData = JSON.parse(req.body.productData);
+
+    // Validate required fields
+    const { name, description, price, category, offerPrice } = productData;
+    if (!name || !description || !price || !category) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    // Upload images
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "At least one image is required" });
+    }
+
+    const imagesUrl = await Promise.all(
+      req.files.map(async (file) => {
+        const result = await cloudinary.uploader.upload(file.path, { resource_type: "image" });
+        return result.secure_url;
+      })
+    );
+
+    // Create product with sellerId
     const product = await Product.create({
-      name,
-      description,
-      price,
-      sellerId: req.userId  // seller's ID from authSeller middleware
+      ...productData,
+      image: imagesUrl,
+      sellerId
     });
 
-    return res.status(201).json({ success: true, product });
+    res.status(201).json({ success: true, message: "Product added", product });
   } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error(error.message);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
 // Get all products for a seller
+//http://localhost:4000/api/product/seller
 export const getSellerProducts = async (req, res) => {
   try {
     const products = await Product.find({ sellerId: req.userId });

@@ -4,10 +4,10 @@ import authSeller from "../middlewares/authSeller.js";
 
 const router = express.Router();
 
-// Add product (seller only)
+// Only sellers can add products
 router.post("/add", authSeller, addProduct);
 
-// Get seller's own products
+// Only sellers can see their own products
 router.get("/my-products", authSeller, getSellerProducts);
 
 export default router;

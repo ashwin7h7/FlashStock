@@ -11,9 +11,7 @@ const authSeller = async (req, res, next) => {
     if (!user || !user.roles.includes("seller")) {
       return res.status(403).json({ success: false, message: "Not authorized as seller" });
     }
-
-    req.userId = user._id;      // Use this as sellerId
-    req.userRoles = user.roles;
+    req.userId = user._id;
     next();
   } catch (error) {
     return res.status(401).json({ success: false, message: "Invalid token" });
