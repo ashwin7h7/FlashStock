@@ -6,55 +6,29 @@ import jwt from "jsonwebtoken";
 //http://localhost:4000/api/user/register
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body; // role: "user" or "seller"
+    const { name, email, password } = req.body; // no role sent by client
 
-    if (!name || !email || !password || !role) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing details" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: "Missing details" });
     }
 
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      // If role already exists, return error
-      if (existingUser.roles.includes(role)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: `${role} already exists for this account`,
-          });
-      }
-
-      // Add new role to existing user
-      existingUser.roles.push(role);
-      await existingUser.save();
-
-      return res.status(200).json({
-        success: true,
-        message: `Account upgraded with role ${role}`,
-        user: {
-          email: existingUser.email,
-          name: existingUser.name,
-          roles: existingUser.roles,
-        },
-      });
+      return res.status(400).json({ success: false, message: "Email already registered" });
     }
 
-    // Create new user with the role
+    // Default role is 'user'
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      roles: [role],
+      roles: ["user"],
     });
 
     // Create JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -78,21 +52,33 @@ export const register = async (req, res) => {
 // Login
 export const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
-    if (!email || !password || !role) return res.status(400).json({ success:false, message:"Missing credentials" });
+    const { email, password } = req.body; // no role needed here
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Missing credentials" });
+    }
 
     const user = await User.findOne({ email });
-    if (!user || !user.roles.includes(role)) return res.status(401).json({ success:false, message:`No account as ${role}` });
+    if (!user) return res.status(401).json({ success: false, message: "No account found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ success:false, message:"Invalid password" });
+    if (!isMatch) return res.status(401).json({ success: false, message: "Invalid password" });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV==="production", sameSite:"strict", maxAge:7*24*60*60*1000 });
 
-    return res.status(200).json({ success:true, user });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      user: { email: user.email, name: user.name, roles: user.roles },
+    });
   } catch (error) {
-    return res.status(500).json({ success:false, message:error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

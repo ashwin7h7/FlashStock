@@ -26,7 +26,6 @@ app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
 // Routes
 app.get("/", (req, res) => res.send("API is Working"));
-
 app.use("/api/user", userRouter);
 app.use("/api/product", productRoutes);
 
@@ -44,30 +43,23 @@ const io = new Server(server, {
 const auctionState = {};
 
 io.on("connection", (socket) => {
-
   console.log("New client connected:", socket.id);
 
   // Join auction room
   socket.on("joinAuction", (auctionId) => {
-
     socket.join(auctionId);
-
     console.log(`Socket ${socket.id} joined auction ${auctionId}`);
-
   });
 
   // Place bid
   socket.on("placeBid", async ({ auctionId, bidderId, amount }) => {
 
     try {
-
       const auction = await Product.findById(auctionId);
-
       if (!auction) return;
 
       // Initialize auction state
       if (!auctionState[auctionId]) {
-
         auctionState[auctionId] = {
           highestBid: auction.offerPrice || auction.price,
           highestBidder: null
@@ -77,7 +69,6 @@ io.on("connection", (socket) => {
 
       // Check bid is higher
       if (amount > auctionState[auctionId].highestBid) {
-
         auctionState[auctionId].highestBid = amount;
         auctionState[auctionId].highestBidder = bidderId;
 
@@ -95,9 +86,7 @@ io.on("connection", (socket) => {
       }
 
     } catch (error) {
-
       console.error("Bid Error:", error.message);
-
     }
 
   });
@@ -106,13 +95,10 @@ io.on("connection", (socket) => {
   socket.on("endAuction", async (auctionId) => {
 
     const state = auctionState[auctionId];
-
     if (!state) return;
 
     try {
-
       const auction = await Product.findById(auctionId);
-
       if (!auction) return;
 
       // Set winner
@@ -133,31 +119,22 @@ io.on("connection", (socket) => {
         winner: state.highestBidder,
         finalBid: state.highestBid
       });
-
       // Clear memory
       delete auctionState[auctionId];
-
     } catch (error) {
-
-      console.error("Auction End Error:", error.message);
-
+        console.error("Auction End Error:", error.message);
     }
 
   });
 
   // Disconnect
   socket.on("disconnect", () => {
-
     console.log("Client disconnected:", socket.id);
-
   });
 
 });
 
-// ---------------- START SERVER ----------------
-
+// Start server
 server.listen(port, () => {
-
   console.log(`Server running at http://localhost:${port}`);
-
 });
