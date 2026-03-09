@@ -1,22 +1,25 @@
 import Product from "../models/Product.js";
 
 // Start Auction
+// http://localhost:4000/api/auction/start
+// Start Auction
 export const startAuction = async (req, res) => {
   try {
-
     const { productId, startingBid, endTime } = req.body;
 
-    const product = await Product.findById(productId);
+    const product = await Product.findByIdAndUpdate(
+      productId,
+      {
+        offerPrice: startingBid,
+        auctionEndTime: endTime,
+        isAuction: true
+      },
+      { new: true } // return the updated document
+    );
 
     if (!product) {
       return res.json({ success: false, message: "Product not found" });
     }
-
-    product.offerPrice = startingBid;
-    product.auctionEndTime = endTime;
-    product.isAuction = true;
-
-    await product.save();
 
     res.json({
       success: true,
@@ -30,18 +33,17 @@ export const startAuction = async (req, res) => {
 };
 
 // Get Active Auctions
+// http://localhost:4000/api/auction/active
 export const getActiveAuctions = async (req, res) => {
   try {
-
     const auctions = await Product.find({
-      isAuction: true
+      isAuction: true,
     });
 
     res.json({
       success: true,
-      auctions
+      auctions,
     });
-
   } catch (error) {
     res.json({ success: false, message: error.message });
   }

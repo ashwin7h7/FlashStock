@@ -8,6 +8,7 @@ import "dotenv/config";
 
 import userRouter from "./routes/userRoute.js";
 import productRoutes from "./routes/productRoutes.js";
+import auctionRoutes from "./routes/auctionRoutes.js";
 
 import Product from "./models/Product.js";
 import Order from "./models/Order.js";
@@ -28,6 +29,7 @@ app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.get("/", (req, res) => res.send("API is Working"));
 app.use("/api/user", userRouter);
 app.use("/api/product", productRoutes);
+app.use("/api/auction", auctionRoutes);
 
 // ---------------- SOCKET.IO ----------------
 
