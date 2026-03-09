@@ -47,7 +47,7 @@ export const addProduct = async (req, res) => {
 };
 
 // Get all products for a seller
-//http://localhost:4000/api/product/seller
+//http://localhost:4000/api/product/my-products
 export const getSellerProducts = async (req, res) => {
   try {
     const products = await Product.find({ sellerId: req.userId });
