@@ -1,4 +1,5 @@
 import Product from "../models/Product.js";
+import { v2 as cloudinary } from "cloudinary";
 
 // Add Product - seller only
 //http://localhost:4000/api/product/add

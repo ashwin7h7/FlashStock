@@ -6,9 +6,9 @@ import jwt from "jsonwebtoken";
 //http://localhost:4000/api/user/register
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body; // no role sent by client
+    const { fullName, email, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!fullName || !email || !password) {
       return res.status(400).json({ success: false, message: "Missing details" });
     }
 
@@ -21,10 +21,10 @@ export const register = async (req, res) => {
     // Default role is 'user'
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
-      name,
+      name: fullName,
       email,
       password: hashedPassword,
-      roles: ["user"],
+      roles: ["buyer"],
     });
 
     // Create JWT token
@@ -131,7 +131,7 @@ export const upgradeToSeller = async (req, res) => {
     if (user.roles.includes("seller")) return res.json({ success:true, message:"Already seller" });
     user.roles.push("seller");
     await user.save();
-    return res.json({ success:true, message:"Upgraded to seller" });
+    return res.json({ success:true, message:"Upgraded to seller", user: { name: user.name, email: user.email, roles: user.roles } });
   } catch (error) {
     return res.status(500).json({ success:false, message:error.message });
   }
