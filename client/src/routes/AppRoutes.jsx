@@ -32,6 +32,7 @@ import MyAuctions from "../pages/seller/MyAuctions";
 import SellerNotifications from "../pages/seller/SellerNotifications";
 import SellerProfile from "../pages/seller/SellerProfile";
 import SellerPickups from "../pages/seller/SellerPickups";
+import SellerAuctionMonitor from "../pages/seller/SellerAuctionMonitor";
 
 const AppRoutes = () => {
   return (
@@ -49,6 +50,7 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<BuyerLayout />}>
           <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
+          <Route path="/buyer/auctions/:id" element={<AuctionDetails />} />
           <Route path="/buyer/bids" element={<MyActiveBids />} />
           <Route path="/buyer/won" element={<WonAuctions />} />
           <Route path="/buyer/pickups" element={<MyPickups />} />
@@ -64,6 +66,7 @@ const AppRoutes = () => {
           <Route path="/seller/add-product" element={<AddProduct />} />
           <Route path="/seller/products" element={<MyProducts />} />
           <Route path="/seller/auctions" element={<MyAuctions />} />
+          <Route path="/seller/auctions/:id" element={<SellerAuctionMonitor />} />
           <Route path="/seller/pickups" element={<SellerPickups />} />
           <Route path="/seller/notifications" element={<SellerNotifications />} />
           <Route path="/seller/profile" element={<SellerProfile />} />

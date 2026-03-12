@@ -19,6 +19,7 @@ import Order from "./models/Order.js";
 import Bid from "./models/Bid.js";
 import Notification from "./models/Notification.js";
 import Pickup from "./models/Pickup.js";
+import User from "./models/User.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -126,17 +127,42 @@ io.on("connection", (socket) => {
         });
       }
 
+      // Notify seller about bid activity
+      if (!previousBidderId) {
+        // First bid on this auction
+        await Notification.create({
+          userId: auction.sellerId,
+          type: "first_bid",
+          title: "First bid received!",
+          message: `Your auction "${auction.name}" received its first bid of Rs. ${bidAmount}.`,
+          relatedProductId: auctionId
+        });
+      } else {
+        // Subsequent higher bid
+        await Notification.create({
+          userId: auction.sellerId,
+          type: "new_higher_bid",
+          title: "New higher bid placed!",
+          message: `A new bid of Rs. ${bidAmount} was placed on "${auction.name}".`,
+          relatedProductId: auctionId
+        });
+      }
+
       // Keep in-memory state in sync (used by endAuction handler)
       auctionState[auctionId] = {
         highestBid: bidAmount,
         highestBidder: bidderId
       };
 
+      // Look up bidder name for the broadcast
+      const bidder = await User.findById(bidderId).select("name");
+
       // Broadcast only on successful acceptance
       io.to(auctionId).emit("bidUpdate", {
         auctionId,
         amount: bidAmount,
-        bidderId
+        bidderId,
+        bidderName: bidder?.name || "Anonymous"
       });
 
     } catch (error) {

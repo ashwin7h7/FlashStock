@@ -39,7 +39,7 @@ export const register = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      user: { email: user.email, name: user.name, roles: user.roles },
+      user: { _id: user._id, email: user.email, name: user.name, roles: user.roles },
     });
   } catch (error) {
     console.log(error.message);
@@ -75,7 +75,7 @@ export const login = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      user: { email: user.email, name: user.name, roles: user.roles },
+      user: { _id: user._id, email: user.email, name: user.name, roles: user.roles },
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

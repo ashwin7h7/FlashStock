@@ -4,19 +4,24 @@ import API from "../../api/axios";
 
 const MyProducts = () => {
   const [products, setProducts] = useState([]);
+  const [pickups, setPickups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // Auction start state per product
-  const [auctionForm, setAuctionForm] = useState(null); // { productId, startingBid, duration }
-  const [auctionMsg, setAuctionMsg] = useState({ text: "", error: false });
+  const [auctionForm, setAuctionForm] = useState(null); // { productId, startingBid, endTime }
+  const [auctionMsg, setAuctionMsg] = useState({ text: "", error: false, productId: null });
   const [starting, setStarting] = useState(false);
 
   const fetchProducts = async () => {
     try {
-      const { data } = await API.get("/product/my-products");
-      if (data.success) setProducts(data.products);
-      else setError(data.message || "Failed to load products");
+      const [prodRes, pickupRes] = await Promise.all([
+        API.get("/product/my-products"),
+        API.get("/pickups"),
+      ]);
+      if (prodRes.data.success) setProducts(prodRes.data.products);
+      else setError(prodRes.data.message || "Failed to load products");
+      if (pickupRes.data.success) setPickups(pickupRes.data.pickups);
     } catch (err) {
       console.error("Fetch products error:", err.response?.data || err.message);
       setError(err.response?.data?.message || "Failed to load products");
@@ -25,37 +30,63 @@ const MyProducts = () => {
     }
   };
 
+  // Check if a product has a completed pickup
+  const hasCompletedPickup = (productId) =>
+    pickups.some((pk) => (pk.productId?._id || pk.productId) === productId && pk.status === "completed");
+
+  // Determine auction status label
+  const getAuctionLabel = (p) => {
+    if (!p.isAuction) return { text: "No auction", color: "bg-blue-100 text-blue-700" };
+    if (p.auctionStatus === "active") return { text: "Active", color: "bg-green-100 text-green-700" };
+    if (hasCompletedPickup(p._id)) return { text: "Pickup Completed", color: "bg-purple-100 text-purple-700" };
+    if (p.winnerId) return { text: "Ended (Winner Selected)", color: "bg-amber-100 text-amber-700" };
+    return { text: "Ended (No Bids)", color: "bg-gray-100 text-gray-600" };
+  };
+
+  // Restart only if: ended + no winner + no completed pickup
+  const canRestart = (p) =>
+    p.isAuction &&
+    p.auctionStatus === "ended" &&
+    !p.winnerId &&
+    !hasCompletedPickup(p._id);
+
+  // Start only if: never auctioned
+  const canStartNew = (p) => !p.isAuction;
+
   useEffect(() => {
     fetchProducts();
   }, []);
 
   const openAuctionForm = (productId) => {
-    setAuctionForm({ productId, startingBid: "", duration: "60" });
-    setAuctionMsg({ text: "", error: false });
+    // Default end time: 1 hour from now, formatted for datetime-local input
+    const defaultEnd = new Date(Date.now() + 60 * 60 * 1000);
+    const localISO = defaultEnd.toISOString().slice(0, 16);
+    setAuctionForm({ productId, startingBid: "", endTime: localISO });
+    setAuctionMsg({ text: "", error: false, productId: null });
   };
 
   const handleStartAuction = async (e) => {
     e.preventDefault();
     if (!auctionForm) return;
     setStarting(true);
-    setAuctionMsg({ text: "", error: false });
+    setAuctionMsg({ text: "", error: false, productId: null });
     try {
-      const endTime = new Date(Date.now() + Number(auctionForm.duration) * 60 * 1000).toISOString();
+      const endTimeISO = new Date(auctionForm.endTime).toISOString();
       const { data } = await API.post("/auction/start", {
         productId: auctionForm.productId,
         startingBid: Number(auctionForm.startingBid),
-        endTime,
+        endTime: endTimeISO,
       });
       if (data.success) {
-        setAuctionMsg({ text: "Auction started!", error: false });
+        setAuctionMsg({ text: "Auction started!", error: false, productId: auctionForm.productId });
         setAuctionForm(null);
         await fetchProducts();
       } else {
-        setAuctionMsg({ text: data.message || "Failed to start auction", error: true });
+        setAuctionMsg({ text: data.message || "Failed to start auction", error: true, productId: auctionForm.productId });
       }
     } catch (err) {
       console.error("Start auction error:", err.response?.data || err.message);
-      setAuctionMsg({ text: err.response?.data?.message || "Failed to start auction", error: true });
+      setAuctionMsg({ text: err.response?.data?.message || "Failed to start auction", error: true, productId: auctionForm.productId });
     } finally {
       setStarting(false);
     }
@@ -93,47 +124,53 @@ const MyProducts = () => {
 
                 {/* Auction status */}
                 <div className="mt-2">
-                  {p.isAuction && p.auctionStatus === "active" ? (
-                    <div>
-                      <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">Auction: active</span>
-                      <p className="text-xs text-gray-400 mt-1">
+                  {(() => {
+                    const label = getAuctionLabel(p);
+                    return <span className={`px-2 py-1 text-xs rounded ${label.color}`}>{label.text}</span>;
+                  })()}
+                  {p.isAuction && p.auctionStatus === "active" && (
+                    <div className="mt-1">
+                      <p className="text-xs text-gray-400">
                         Ends: {new Date(p.auctionEndTime).toLocaleString()}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         Current bid: Rs. {p.offerPrice}
                       </p>
                     </div>
-                  ) : p.isAuction && p.auctionStatus === "ended" ? (
-                    <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">Auction: ended</span>
-                  ) : (
-                    <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">No auction</span>
                   )}
                 </div>
 
-                {/* Start Auction button — only for non-auction products */}
-                {!p.isAuction && (
+                {/* Start / Restart Auction button */}
+                {(canStartNew(p) || canRestart(p)) && (
                   <div className="mt-3">
+                    {/* Success/error message persists after form closes */}
+                    {auctionMsg.productId === p._id && auctionMsg.text && !auctionForm && (
+                      <p className={`text-xs mb-2 ${auctionMsg.error ? "text-red-600" : "text-green-600"}`}>{auctionMsg.text}</p>
+                    )}
                     {auctionForm?.productId === p._id ? (
                       <form onSubmit={handleStartAuction} className="space-y-2">
-                        {auctionMsg.text && (
+                        {auctionMsg.productId === p._id && auctionMsg.text && (
                           <p className={`text-xs ${auctionMsg.error ? "text-red-600" : "text-green-600"}`}>{auctionMsg.text}</p>
                         )}
                         <input
                           type="number"
                           placeholder="Starting bid (Rs.)"
                           required
+                          min="1"
                           value={auctionForm.startingBid}
                           onChange={(e) => setAuctionForm({ ...auctionForm, startingBid: e.target.value })}
                           className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
                         />
-                        <input
-                          type="number"
-                          placeholder="Duration (minutes)"
-                          required
-                          value={auctionForm.duration}
-                          onChange={(e) => setAuctionForm({ ...auctionForm, duration: e.target.value })}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                        />
+                        <div>
+                          <label className="text-xs text-gray-500">Auction End Time</label>
+                          <input
+                            type="datetime-local"
+                            required
+                            value={auctionForm.endTime}
+                            onChange={(e) => setAuctionForm({ ...auctionForm, endTime: e.target.value })}
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                          />
+                        </div>
                         <div className="flex gap-2">
                           <button type="submit" disabled={starting}
                             className="flex-1 bg-green-600 text-white py-1 rounded text-sm hover:bg-green-700 disabled:opacity-50">
@@ -148,7 +185,7 @@ const MyProducts = () => {
                     ) : (
                       <button onClick={() => openAuctionForm(p._id)}
                         className="w-full bg-green-600 text-white py-1.5 rounded text-sm hover:bg-green-700">
-                        Start Auction
+                        {canRestart(p) ? "Restart Auction" : "Start Auction"}
                       </button>
                     )}
                   </div>

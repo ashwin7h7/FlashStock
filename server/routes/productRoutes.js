@@ -1,5 +1,5 @@
 import express from "express";
-import { addProduct, getSellerProducts } from "../controllers/productController.js";
+import { addProduct, getSellerProducts, getProductById } from "../controllers/productController.js";
 import authSeller from "../middlewares/authSeller.js";
 import { upload } from "../config/multer.js";
 
@@ -10,5 +10,8 @@ router.post("/add", authSeller, upload.array("images", 5), addProduct);
 
 // Only sellers can see their own products
 router.get("/my-products", authSeller, getSellerProducts);
+
+// Get single product by ID (public)
+router.get("/:id", getProductById);
 
 export default router;

@@ -15,6 +15,7 @@ const productSchema = new mongoose.Schema(
     auctionStatus: { type: String, enum: ["active", "ended"], default: "active" },
     startingBid: { type: Number },                          // minimum allowed first bid
     auctionEndTime: { type: Date },                         // when auction ends
+    auctionStartedAt: { type: Date },                        // when current round started
     highestBidderId: { type: mongoose.Schema.Types.ObjectId, ref: "user" }, // current highest bidder
     winnerId: { type: mongoose.Schema.Types.ObjectId, ref: "user" }         // winner after auction ends
   },

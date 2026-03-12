@@ -47,6 +47,20 @@ export const addProduct = async (req, res) => {
   }
 };
 
+// Get single product by ID (public)
+//http://localhost:4000/api/product/:id
+export const getProductById = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+    res.json({ success: true, product });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Get all products for a seller
 //http://localhost:4000/api/product/my-products
 export const getSellerProducts = async (req, res) => {

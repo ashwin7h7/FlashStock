@@ -1,5 +1,7 @@
+import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import Bid from "../models/Bid.js";
+import Pickup from "../models/Pickup.js";
 
 // Start Auction
 // http://localhost:4000/api/auction/start
@@ -29,17 +31,32 @@ export const startAuction = async (req, res) => {
     if (product.sellerId.toString() !== req.userId.toString()) {
       return res.status(403).json({ success: false, message: "You can only auction your own products" });
     }
-    if (product.isAuction) {
+
+    // Block if auction is currently active
+    if (product.isAuction && product.auctionStatus === "active") {
       return res.status(400).json({ success: false, message: "Auction already active for this product" });
     }
 
-    // Set auction fields
+    // Block restart if auction ended with a winner
+    if (product.auctionStatus === "ended" && product.winnerId) {
+      return res.status(400).json({ success: false, message: "Cannot restart — auction ended with a winner" });
+    }
+
+    // Block restart if pickup exists and is completed
+    if (product.isAuction) {
+      const completedPickup = await Pickup.findOne({ productId: productId, status: "completed" });
+      if (completedPickup) {
+        return res.status(400).json({ success: false, message: "Cannot restart — pickup already completed" });
+      }
+    }
+
+    // Set auction fields — treat every start/restart as a fresh round
     product.isAuction = true;
     product.auctionStatus = "active";
     product.startingBid = startingBid;
-    // Only initialize offerPrice from startingBid if it's not already higher
-    product.offerPrice = Math.max(startingBid, product.offerPrice || 0);
+    product.offerPrice = startingBid;
     product.auctionEndTime = endDate;
+    product.auctionStartedAt = new Date();
     product.highestBidderId = null;
     product.winnerId = null;
     await product.save();
@@ -92,13 +109,79 @@ export const getEndedAuctions = async (req, res) => {
   }
 };
 
+// Get auctions where the current user has placed bids
+// GET /api/auction/my-bids
+export const getMyBids = async (req, res) => {
+  try {
+    // Find distinct product IDs the user has bid on
+    const productIds = await Bid.distinct("productId", { bidderId: req.userId });
+
+    if (productIds.length === 0) {
+      return res.json({ success: true, items: [] });
+    }
+
+    // Fetch those products
+    const products = await Product.find({ _id: { $in: productIds } })
+      .populate("sellerId", "name")
+      .lean();
+
+    // Build a map of auctionStartedAt per product for round filtering
+    const startMap = {};
+    for (const p of products) {
+      if (p.auctionStartedAt) startMap[p._id.toString()] = p.auctionStartedAt;
+    }
+
+    // For each product, get the user's highest bid in the CURRENT round only
+    const userId = new mongoose.Types.ObjectId(req.userId);
+
+    // Build per-product match conditions that respect round boundaries
+    const matchConditions = productIds.map((pid) => {
+      const cond = { bidderId: userId, productId: pid };
+      if (startMap[pid.toString()]) {
+        cond.createdAt = { $gte: startMap[pid.toString()] };
+      }
+      return cond;
+    });
+
+    const userBids = await Bid.aggregate([
+      { $match: { $or: matchConditions } },
+      { $group: { _id: "$productId", myHighestBid: { $max: "$amount" }, lastBidAt: { $max: "$createdAt" } } }
+    ]);
+
+    const bidMap = {};
+    for (const b of userBids) {
+      bidMap[b._id.toString()] = { myHighestBid: b.myHighestBid, lastBidAt: b.lastBidAt };
+    }
+
+    const items = products.map((p) => ({
+      ...p,
+      myHighestBid: bidMap[p._id.toString()]?.myHighestBid || 0,
+      lastBidAt: bidMap[p._id.toString()]?.lastBidAt || null,
+    }));
+
+    // Sort by most recent bid first
+    items.sort((a, b) => new Date(b.lastBidAt) - new Date(a.lastBidAt));
+
+    res.json({ success: true, items });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Get Bid History for a product/auction
 // GET /api/auction/:productId/bids
 export const getBidHistory = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    const bids = await Bid.find({ productId })
+    // Only return bids from the current auction round
+    const product = await Product.findById(productId).select("auctionStartedAt");
+    const filter = { productId };
+    if (product?.auctionStartedAt) {
+      filter.createdAt = { $gte: product.auctionStartedAt };
+    }
+
+    const bids = await Bid.find(filter)
       .sort({ createdAt: -1 })
       .populate("bidderId", "name");
 
