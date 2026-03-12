@@ -20,6 +20,7 @@ import BuyerDashboard from "../pages/buyer/BuyerDashboard";
 import AuctionDetails from "../pages/buyer/AuctionDetails";
 import MyActiveBids from "../pages/buyer/MyActiveBids";
 import WonAuctions from "../pages/buyer/WonAuctions";
+import WonAuctionDetails from "../pages/buyer/WonAuctionDetails";
 import BuyerNotifications from "../pages/buyer/BuyerNotifications";
 import BuyerProfile from "../pages/buyer/BuyerProfile";
 import MyPickups from "../pages/buyer/MyPickups";
@@ -53,6 +54,7 @@ const AppRoutes = () => {
           <Route path="/buyer/auctions/:id" element={<AuctionDetails />} />
           <Route path="/buyer/bids" element={<MyActiveBids />} />
           <Route path="/buyer/won" element={<WonAuctions />} />
+          <Route path="/buyer/won/:id" element={<WonAuctionDetails />} />
           <Route path="/buyer/pickups" element={<MyPickups />} />
           <Route path="/buyer/notifications" element={<BuyerNotifications />} />
           <Route path="/buyer/profile" element={<BuyerProfile />} />

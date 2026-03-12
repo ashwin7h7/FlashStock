@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
 const MyActiveBids = () => {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,63 +24,101 @@ const MyActiveBids = () => {
 
   if (loading) return <div className="text-center py-20">Loading...</div>;
 
-  const statusBadge = (item) => {
-    if (item.auctionStatus === "active" && new Date(item.auctionEndTime) > new Date()) {
-      return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Live</span>;
+  // Determine bid status for each auction
+  const getBidStatus = (item) => {
+    // Ended
+    if (item.auctionStatus === "ended") {
+      return { label: "Ended", color: "bg-gray-100 text-gray-700" };
     }
-    if (item.winnerId) {
-      return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">Won</span>;
+    
+    // Still active
+    if (new Date(item.auctionEndTime) <= new Date()) {
+      return { label: "Ended", color: "bg-gray-100 text-gray-700" };
     }
-    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Ended</span>;
+
+    // Active: check if user is winning or outbid
+    const currentHighest = Number(item.offerPrice) || 0;
+    const userBid = Number(item.myHighestBid) || 0;
+
+    if (userBid === currentHighest) {
+      // User has the highest bid
+      return { label: "Winning", color: "bg-green-100 text-green-700" };
+    } else if (userBid < currentHighest) {
+      // User has been outbid
+      return { label: "Outbid", color: "bg-red-100 text-red-700" };
+    }
+    
+    return { label: "Active", color: "bg-blue-100 text-blue-700" };
   };
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">My Bids</h1>
+      <h1 className="text-2xl font-bold mb-6">My Active Bids</h1>
       {items.length === 0 ? (
-        <p className="text-gray-500">You haven't placed any bids yet.</p>
+        <div className="bg-indigo-50 border border-indigo-200 p-8 rounded-lg text-center">
+          <p className="text-gray-600 text-lg">You haven't placed any bids yet.</p>
+          <Link to="/auctions" className="text-indigo-600 hover:text-indigo-700 font-medium inline-block mt-3">
+            Browse Auctions →
+          </Link>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item) => (
-            <div
-              key={item._id}
-              className="bg-white rounded-lg shadow hover:shadow-md transition p-4 flex flex-col"
-            >
-              <img
-                src={item.image?.[0] || "/placeholder.png"}
-                alt={item.name}
-                className="w-full h-40 object-cover rounded mb-3"
-              />
-              <h3 className="font-semibold text-lg">{item.name}</h3>
+          {items.map((item) => {
+            const status = getBidStatus(item);
+            const isActive = new Date(item.auctionEndTime) > new Date();
+            const timeLeft = isActive
+              ? new Date(item.auctionEndTime).toLocaleString()
+              : `Ended ${new Date(item.auctionEndTime).toLocaleString()}`;
 
-              <div className="flex items-center gap-2 mt-2">
-                {statusBadge(item)}
-                <span className="text-xs text-gray-400">
-                  {item.auctionStatus === "active" && new Date(item.auctionEndTime) > new Date()
-                    ? `Ends ${new Date(item.auctionEndTime).toLocaleString()}`
-                    : `Ended ${new Date(item.auctionEndTime).toLocaleString()}`}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                <div className="bg-gray-50 p-2 rounded">
-                  <p className="text-xs text-gray-500">Highest Bid</p>
-                  <p className="font-semibold text-indigo-600">Rs. {item.offerPrice}</p>
-                </div>
-                <div className="bg-gray-50 p-2 rounded">
-                  <p className="text-xs text-gray-500">Your Highest</p>
-                  <p className="font-semibold text-emerald-600">Rs. {item.myHighestBid}</p>
-                </div>
-              </div>
-
-              <Link
-                to={`/buyer/auctions/${item._id}`}
-                className="mt-auto pt-3 block text-center bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-medium text-sm"
+            return (
+              <div
+                key={item._id}
+                className="bg-white rounded-lg shadow hover:shadow-md transition p-4 flex flex-col overflow-hidden border border-gray-100"
               >
-                View Details
-              </Link>
-            </div>
-          ))}
+                {/* Image */}
+                <img
+                  src={item.image?.[0] || "/placeholder.png"}
+                  alt={item.name}
+                  className="w-full h-40 object-cover rounded mb-3"
+                />
+
+                {/* Title */}
+                <h3 className="font-semibold text-lg mb-2 truncate">{item.name}</h3>
+
+                {/* Status Badge */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${status.color}`}>
+                    {status.label}
+                  </span>
+                </div>
+
+                {/* Bid Information */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="bg-gray-50 p-2 rounded">
+                    <p className="text-xs text-gray-500">Highest Bid</p>
+                    <p className="font-semibold text-indigo-600">Rs. {item.offerPrice}</p>
+                  </div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <p className="text-xs text-gray-500">Your Bid</p>
+                    <p className="font-semibold text-emerald-600">Rs. {item.myHighestBid}</p>
+                  </div>
+                </div>
+
+                {/* End Time */}
+                <p className="text-xs text-gray-400 mb-3">
+                  {isActive ? "⏱️ " : "🏁 "}{timeLeft}
+                </p>
+
+                {/* View Details Button */}
+                <Link
+                  to={`/buyer/auctions/${item._id}`}
+                  className="mt-auto block text-center bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 font-medium text-sm transition"
+                >
+                  View Auction
+                </Link>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

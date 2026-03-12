@@ -1,5 +1,15 @@
 import Notification from "../models/Notification.js";
 
+// GET /api/notifications/count/unread
+export const getUnreadCount = async (req, res) => {
+  try {
+    const count = await Notification.countDocuments({ userId: req.userId, isRead: false });
+    res.json({ success: true, unreadCount: count });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // GET /api/notifications
 export const getMyNotifications = async (req, res) => {
   try {
