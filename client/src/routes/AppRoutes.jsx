@@ -23,6 +23,7 @@ import WonAuctions from "../pages/buyer/WonAuctions";
 import WonAuctionDetails from "../pages/buyer/WonAuctionDetails";
 import BuyerNotifications from "../pages/buyer/BuyerNotifications";
 import BuyerProfile from "../pages/buyer/BuyerProfile";
+import EditProfile from "../pages/shared/EditProfile";
 import MyPickups from "../pages/buyer/MyPickups";
 import BuyerNegotiations from "../pages/buyer/BuyerNegotiations";
 import BuyerNegotiationChat from "../pages/buyer/BuyerNegotiationChat";
@@ -64,6 +65,7 @@ const AppRoutes = () => {
           <Route path="/buyer/negotiations/:id" element={<BuyerNegotiationChat />} />
           <Route path="/buyer/notifications" element={<BuyerNotifications />} />
           <Route path="/buyer/profile" element={<BuyerProfile />} />
+          <Route path="/buyer/profile/edit" element={<EditProfile />} />
         </Route>
       </Route>
 
@@ -80,6 +82,7 @@ const AppRoutes = () => {
           <Route path="/seller/pickups" element={<SellerPickups />} />
           <Route path="/seller/notifications" element={<SellerNotifications />} />
           <Route path="/seller/profile" element={<SellerProfile />} />
+          <Route path="/seller/profile/edit" element={<EditProfile />} />
         </Route>
       </Route>
     </Routes>

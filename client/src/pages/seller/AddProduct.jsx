@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 const SRI_LANKA_DISTRICTS = [
   "Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo",
@@ -11,12 +12,20 @@ const SRI_LANKA_DISTRICTS = [
 ];
 
 const AddProduct = () => {
+  const { user } = useAuth();
   const [form, setForm] = useState({ name: "", description: "", price: "", offerPrice: "", category: "", location: "" });
   const [images, setImages] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const sellerLocation = user?.location?.trim();
+    if (sellerLocation && !form.location) {
+      setForm((prev) => ({ ...prev, location: sellerLocation }));
+    }
+  }, [user?.location]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -109,6 +118,9 @@ const AddProduct = () => {
               <option key={d} value={d}>{d}</option>
             ))}
           </select>
+          {user?.location?.trim() && (
+            <p className="text-xs text-gray-500 mt-1">Defaulted to your profile district. You can change it per listing.</p>
+          )}
         </div>
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-1">Images (up to 5)</label>

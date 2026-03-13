@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 const CATEGORY_OPTIONS = [
   "all",
@@ -35,6 +36,7 @@ const isLiveAuction = (auction, nowTs = Date.now()) => {
 };
 
 const BrowseAuctions = () => {
+  const { user } = useAuth();
   const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,10 +46,14 @@ const BrowseAuctions = () => {
   const [location, setLocation] = useState("all");
   const [now, setNow] = useState(Date.now());
 
+  const normalizeLocation = (value) => (value || "").trim().toLowerCase();
+  const userDistrict = normalizeLocation(user?.location);
+
   useEffect(() => {
     const fetchAuctions = async () => {
       try {
-        const activeRes = await API.get("/auction/active");
+        const query = location !== "all" ? `?location=${encodeURIComponent(location)}` : "";
+        const activeRes = await API.get(`/auction/active${query}`);
         const activeAuctions = activeRes.data?.success ? activeRes.data.auctions : [];
         const normalized = activeAuctions.filter((a) => isLiveAuction(a));
 
@@ -61,7 +67,7 @@ const BrowseAuctions = () => {
       }
     };
     fetchAuctions();
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -215,7 +221,14 @@ const BrowseAuctions = () => {
                 <p className="text-gray-500 text-sm mt-1 line-clamp-2">{item.description || "No description"}</p>
 
                 {item.location && (
-                  <p className="text-xs text-gray-500 mt-1.5">📍 {item.location}</p>
+                  <div className="mt-1.5 flex items-center flex-wrap gap-2">
+                    <p className="text-xs text-gray-500">📍 {item.location}</p>
+                    {userDistrict && normalizeLocation(item.location) === userDistrict && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                        Near you
+                      </span>
+                    )}
+                  </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-2 mt-3">

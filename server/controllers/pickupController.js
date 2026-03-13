@@ -7,7 +7,7 @@ export const getMyPickups = async (req, res) => {
     const pickups = await Pickup.find({
       $or: [{ sellerId: req.userId }, { buyerId: req.userId }]
     })
-      .populate("productId", "name image offerPrice")
+      .populate("productId", "name image offerPrice location")
       .populate("sellerId", "name")
       .populate("buyerId", "name")
       .sort({ createdAt: -1 });
@@ -22,7 +22,7 @@ export const getMyPickups = async (req, res) => {
 export const getPickupById = async (req, res) => {
   try {
     const pickup = await Pickup.findById(req.params.id)
-      .populate("productId", "name image offerPrice")
+      .populate("productId", "name image offerPrice location")
       .populate("sellerId", "name")
       .populate("buyerId", "name");
 
@@ -42,7 +42,7 @@ export const getPickupById = async (req, res) => {
   }
 };
 
-// PATCH /api/pickups/:id/confirm-seller
+// PATCH /api/pickups/:id/confirm-seller  →  Seller marks item as ready for pickup
 export const confirmPickupBySeller = async (req, res) => {
   try {
     const pickup = await Pickup.findById(req.params.id);
@@ -51,46 +51,35 @@ export const confirmPickupBySeller = async (req, res) => {
     }
 
     if (pickup.sellerId.toString() !== req.userId.toString()) {
-      return res.status(403).json({ success: false, message: "Only the seller can confirm as seller" });
+      return res.status(403).json({ success: false, message: "Only the seller can perform this action" });
     }
 
-    if (pickup.status === "completed") {
-      return res.status(400).json({ success: false, message: "Pickup already completed" });
+    const alreadyPast = ["READY_FOR_PICKUP", "PICKUP_CONFIRMED", "COMPLETED", "completed"];
+    if (alreadyPast.includes(pickup.status)) {
+      return res.status(400).json({ success: false, message: "Item is already past this stage" });
     }
 
+    pickup.status = "READY_FOR_PICKUP";
     pickup.sellerConfirmed = true;
-
-    // Check if both confirmed
-    if (pickup.sellerConfirmed && pickup.buyerConfirmed) {
-      pickup.status = "completed";
-      pickup.completedAt = new Date();
-
-      // Notify both parties
-      await Notification.create({
-        userId: pickup.buyerId,
-        type: "pickup_completed",
-        title: "Pickup completed!",
-        message: "Both parties have confirmed the pickup. Transaction is complete.",
-        relatedProductId: pickup.productId
-      });
-      await Notification.create({
-        userId: pickup.sellerId,
-        type: "pickup_completed",
-        title: "Pickup completed!",
-        message: "Both parties have confirmed the pickup. Transaction is complete.",
-        relatedProductId: pickup.productId
-      });
-    }
+    pickup.readyAt = new Date();
 
     await pickup.save();
 
-    res.json({ success: true, message: pickup.status === "completed" ? "Pickup completed" : "Seller confirmed", pickup });
+    await Notification.create({
+      userId: pickup.buyerId,
+      type: "pickup_ready",
+      title: "Item ready for pickup!",
+      message: "The seller has marked your item as ready for pickup. Please confirm when you collect it.",
+      relatedProductId: pickup.productId
+    });
+
+    res.json({ success: true, message: "Item marked as ready for pickup", pickup });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// PATCH /api/pickups/:id/confirm-buyer
+// PATCH /api/pickups/:id/confirm-buyer  →  Buyer confirms pickup; auto-completes transaction
 export const confirmPickupByBuyer = async (req, res) => {
   try {
     const pickup = await Pickup.findById(req.params.id);
@@ -99,39 +88,46 @@ export const confirmPickupByBuyer = async (req, res) => {
     }
 
     if (pickup.buyerId.toString() !== req.userId.toString()) {
-      return res.status(403).json({ success: false, message: "Only the buyer can confirm as buyer" });
+      return res.status(403).json({ success: false, message: "Only the buyer can perform this action" });
     }
 
-    if (pickup.status === "completed") {
+    if (pickup.status === "COMPLETED" || pickup.status === "completed") {
       return res.status(400).json({ success: false, message: "Pickup already completed" });
     }
 
-    pickup.buyerConfirmed = true;
+    // Allow confirmation when READY_FOR_PICKUP, or legacy "pending" with sellerConfirmed
+    const canConfirm =
+      pickup.status === "READY_FOR_PICKUP" ||
+      (pickup.status === "pending" && pickup.sellerConfirmed);
 
-    // Check if both confirmed
-    if (pickup.sellerConfirmed && pickup.buyerConfirmed) {
-      pickup.status = "completed";
-      pickup.completedAt = new Date();
-
-      await Notification.create({
-        userId: pickup.buyerId,
-        type: "pickup_completed",
-        title: "Pickup completed!",
-        message: "Both parties have confirmed the pickup. Transaction is complete.",
-        relatedProductId: pickup.productId
-      });
-      await Notification.create({
-        userId: pickup.sellerId,
-        type: "pickup_completed",
-        title: "Pickup completed!",
-        message: "Both parties have confirmed the pickup. Transaction is complete.",
-        relatedProductId: pickup.productId
-      });
+    if (!canConfirm) {
+      return res.status(400).json({ success: false, message: "Waiting for the seller to mark the item as ready first" });
     }
+
+    const now = new Date();
+    pickup.buyerConfirmed = true;
+    pickup.confirmedAt = now;
+    pickup.status = "COMPLETED";
+    pickup.completedAt = now;
 
     await pickup.save();
 
-    res.json({ success: true, message: pickup.status === "completed" ? "Pickup completed" : "Buyer confirmed", pickup });
+    await Notification.create({
+      userId: pickup.buyerId,
+      type: "pickup_completed",
+      title: "Pickup completed!",
+      message: "You have confirmed the pickup. Transaction is complete.",
+      relatedProductId: pickup.productId
+    });
+    await Notification.create({
+      userId: pickup.sellerId,
+      type: "pickup_completed",
+      title: "Pickup completed!",
+      message: "The buyer has confirmed the pickup. Transaction is complete.",
+      relatedProductId: pickup.productId
+    });
+
+    res.json({ success: true, message: "Pickup completed", pickup });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

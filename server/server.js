@@ -13,6 +13,7 @@ import orderRoutes from "./routes/orderRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import pickupRoutes from "./routes/pickupRoutes.js";
 import negotiationRoutes from "./routes/negotiationRoutes.js";
+import ratingRoutes from "./routes/ratingRoutes.js";
 
 import connectCloudinary from "./config/cloudinary.js";
 import Product from "./models/Product.js";
@@ -62,6 +63,7 @@ app.use("/api/order", orderRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/pickups", pickupRoutes);
 app.use("/api/negotiations", negotiationRoutes);
+app.use("/api/ratings", ratingRoutes);
 
 // ---------------- SOCKET.IO ----------------
 

@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { v2 as cloudinary } from "cloudinary";
 
 const buildCookieOptions = () => {
   const isProd = process.env.NODE_ENV === "production";
@@ -25,7 +26,9 @@ export const register = async (req, res) => {
       return res.status(400).json({ success: false, message: "Missing details" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return res.status(400).json({ success: false, message: "Email already registered" });
@@ -35,7 +38,7 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       name: fullName,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       roles: ["buyer"],
     });
@@ -47,7 +50,15 @@ export const register = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      user: { _id: user._id, email: user.email, name: user.name, roles: user.roles },
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        location: user.location,
+        profileImage: user.profileImage,
+        roles: user.roles,
+      },
     });
   } catch (error) {
     console.log(error.message);
@@ -66,7 +77,9 @@ export const login = async (req, res) => {
       return res.status(400).json({ success: false, message: "Missing credentials" });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(401).json({ success: false, message: "No account found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -78,7 +91,15 @@ export const login = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      user: { _id: user._id, email: user.email, name: user.name, roles: user.roles },
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        location: user.location,
+        profileImage: user.profileImage,
+        roles: user.roles,
+      },
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -137,5 +158,83 @@ export const upgradeToSeller = async (req, res) => {
     return res.json({ success:true, message:"Upgraded to seller", user: { name: user.name, email: user.email, roles: user.roles } });
   } catch (error) {
     return res.status(500).json({ success:false, message:error.message });
+  }
+};
+
+// ----------------- UPDATE PROFILE -----------------
+// PATCH /api/user/profile
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { fullName, email, phone, location } = req.body;
+
+    const nameValue = String(fullName || "").trim();
+    const emailValue = String(email || "").trim().toLowerCase();
+    const locationValue = String(location || "").trim();
+    const phoneValue = phone == null ? "" : String(phone).trim();
+    if (!nameValue) {
+      return res.status(400).json({ success: false, message: "Full name is required" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailValue)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid email address" });
+    }
+
+    if (!locationValue) {
+      return res.status(400).json({ success: false, message: "District/location is required" });
+    }
+
+    const existingUser = await User.findOne({ email: emailValue, _id: { $ne: userId } });
+    if (existingUser) {
+      return res.status(409).json({ success: false, message: "Email already in use by another account" });
+    }
+
+    let uploadedProfileImageUrl;
+    if (req.file) {
+      try {
+        const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+          resource_type: "image",
+          folder: "flashstock/profiles",
+        });
+        uploadedProfileImageUrl = uploadResult.secure_url;
+      } catch (uploadError) {
+        return res.status(400).json({
+          success: false,
+          message: "Profile image upload failed. Please try a different image.",
+        });
+      }
+    }
+
+    const updatePayload = {
+      name: nameValue,
+      email: emailValue,
+      phone: phoneValue,
+      location: locationValue,
+    };
+    if (uploadedProfileImageUrl) {
+      updatePayload.profileImage = uploadedProfileImageUrl;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updatePayload,
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    if (error?.code === 11000 && error?.keyPattern?.email) {
+      return res.status(409).json({ success: false, message: "Email already in use by another account" });
+    }
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

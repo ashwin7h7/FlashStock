@@ -44,7 +44,7 @@ export const startAuction = async (req, res) => {
 
     // Block restart if pickup exists and is completed
     if (product.isAuction) {
-      const completedPickup = await Pickup.findOne({ productId: productId, status: "completed" });
+      const completedPickup = await Pickup.findOne({ productId: productId, status: { $in: ["completed", "COMPLETED"] } });
       if (completedPickup) {
         return res.status(400).json({ success: false, message: "Cannot restart — pickup already completed" });
       }
@@ -76,16 +76,40 @@ export const startAuction = async (req, res) => {
 // http://localhost:4000/api/auction/active
 export const getActiveAuctions = async (req, res) => {
   try {
-    const { location } = req.query;
+    const { location, category, search, sortBy } = req.query;
     const filter = {
       isAuction: true,
       auctionStatus: "active",
       auctionEndTime: { $gt: new Date() },
     };
+
     if (location && location.toLowerCase() !== "all") {
       filter.location = location;
     }
-    const auctions = await Product.find(filter);
+
+    if (category && category.toLowerCase() !== "all") {
+      filter.category = category;
+    }
+
+    if (search && search.trim()) {
+      const safeSearch = search.trim();
+      filter.$or = [
+        { name: { $regex: safeSearch, $options: "i" } },
+        { description: { $regex: safeSearch, $options: "i" } },
+      ];
+    }
+
+    const sort = {};
+    if (sortBy === "highest-bid") {
+      sort.offerPrice = -1;
+    } else if (sortBy === "recently-added") {
+      sort.createdAt = -1;
+    } else {
+      // default and "ending-soon"
+      sort.auctionEndTime = 1;
+    }
+
+    const auctions = await Product.find(filter).sort(sort);
 
     res.json({
       success: true,
