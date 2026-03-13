@@ -8,7 +8,7 @@ export const getMyPickups = async (req, res) => {
       $or: [{ sellerId: req.userId }, { buyerId: req.userId }]
     })
       .populate("productId", "name image offerPrice location")
-      .populate("sellerId", "name")
+      .populate("sellerId", "name email phone location")
       .populate("buyerId", "name")
       .sort({ createdAt: -1 });
 
@@ -23,7 +23,7 @@ export const getPickupById = async (req, res) => {
   try {
     const pickup = await Pickup.findById(req.params.id)
       .populate("productId", "name image offerPrice location")
-      .populate("sellerId", "name")
+      .populate("sellerId", "name email phone location")
       .populate("buyerId", "name");
 
     if (!pickup) {

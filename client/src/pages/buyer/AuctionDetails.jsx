@@ -28,6 +28,8 @@ const AuctionDetails = () => {
   const [pageError, setPageError] = useState("");
   const [placingBid, setPlacingBid] = useState(false);
   const [startingNegotiation, setStartingNegotiation] = useState(false);
+  const [sellerInfo, setSellerInfo] = useState(null);
+  const [sellerRating, setSellerRating] = useState(null);
 
   const socketRef = useRef(null);
   const finalStateRetryRef = useRef(null);
@@ -128,6 +130,23 @@ const AuctionDetails = () => {
 
   const { resolvedWinnerId, endedWithWinner, endedWithNoBids } = getEndedAuctionState(product, bids);
   const isUserWinner = Boolean(resolvedWinnerId && resolvedWinnerId === user?._id);
+
+  // ───── Fetch seller info + rating when product loads ─────
+  useEffect(() => {
+    if (!product?.sellerId) return;
+    const sid = String(product.sellerId);
+    Promise.allSettled([
+      API.get(`/user/${sid}/profile`),
+      API.get(`/ratings/seller/${sid}`),
+    ]).then(([profileRes, ratingRes]) => {
+      if (profileRes.status === "fulfilled" && profileRes.value?.data?.success) {
+        setSellerInfo(profileRes.value.data.seller);
+      }
+      if (ratingRes.status === "fulfilled" && ratingRes.value?.data?.success) {
+        setSellerRating(ratingRes.value.data.summary);
+      }
+    });
+  }, [product?.sellerId]);
 
   // ───── Fetch order/pickup info if user won ─────
   useEffect(() => {
@@ -276,6 +295,13 @@ const AuctionDetails = () => {
     setBidAmount("");
   };
 
+  const handleIncrement = (increment) => {
+    const currentHighest = Number(product?.offerPrice) || 0;
+    const typed = Number(bidAmount);
+    const base = bidAmount !== "" && typed > 0 ? typed : currentHighest;
+    setBidAmount(String(base + increment));
+  };
+
   // ───── Render ─────
   if (loading) return <div className="text-center py-20">Loading...</div>;
   if (!product)
@@ -338,6 +364,108 @@ const AuctionDetails = () => {
               ))}
             </div>
           )}
+
+          {/* ── Seller Info Card ── */}
+          {sellerInfo && (
+            <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-4 shadow-sm mt-5">
+              {/* Avatar */}
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-200">
+                {sellerInfo.profileImage ? (
+                  <img
+                    src={sellerInfo.profileImage}
+                    alt={sellerInfo.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500 text-lg font-bold select-none">
+                    {sellerInfo.name?.[0]?.toUpperCase() || "S"}
+                  </span>
+                )}
+              </div>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-0.5">Seller</p>
+                <p className="font-semibold text-gray-800 truncate">{sellerInfo.name}</p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                  {sellerRating && sellerRating.totalReviews > 0 ? (
+                    <span className="text-sm text-gray-600">
+                      ⭐ {sellerRating.avgRating.toFixed(1)}
+                      <span className="text-gray-400 ml-1">({sellerRating.totalReviews} review{sellerRating.totalReviews !== 1 ? "s" : ""})</span>
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                      New Seller
+                    </span>
+                  )}
+                  {sellerInfo.location && (
+                    <span className="text-sm text-gray-500">📍 {sellerInfo.location}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Bid History ── */}
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold mb-4">
+              Bid History ({bids.length} bid{bids.length !== 1 ? "s" : ""})
+            </h2>
+            {bids.length === 0 ? (
+              <p className="text-gray-500">No bids yet. Be the first!</p>
+            ) : (
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-sm font-medium text-gray-600">#</th>
+                      <th className="px-4 py-3 text-sm font-medium text-gray-600">
+                        Bidder
+                      </th>
+                      <th className="px-4 py-3 text-sm font-medium text-gray-600">
+                        Amount
+                      </th>
+                      <th className="px-4 py-3 text-sm font-medium text-gray-600">
+                        Time
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bids.map((bid, i) => {
+                      const diff = now - new Date(bid.createdAt).getTime();
+                      const secs = Math.floor(diff / 1000);
+                      const timeAgo =
+                        secs < 60 ? "Just now"
+                        : secs < 3600 ? `${Math.floor(secs / 60)}m ago`
+                        : secs < 86400 ? `${Math.floor(secs / 3600)}h ago`
+                        : new Date(bid.createdAt).toLocaleDateString();
+
+                      return (
+                        <tr
+                          key={i}
+                          className={`border-t ${i === 0 ? "bg-indigo-50" : ""}`}
+                        >
+                          <td className="px-4 py-3 text-sm text-gray-400">{bids.length - i}</td>
+                          <td className="px-4 py-3 text-sm">
+                            {bid.bidderId?._id === user?._id ? (
+                              <span className="font-semibold text-indigo-600">You</span>
+                            ) : (
+                              bid.bidderId?.name || "Anonymous"
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-semibold">
+                            Rs. {bid.amount}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500" title={new Date(bid.createdAt).toLocaleString()}>
+                            {timeAgo}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Details + bid form */}
@@ -484,7 +612,7 @@ const AuctionDetails = () => {
 
           {/* Bid form — only for logged-in non-seller while auction is live */}
           {!ended && user && !isProductSeller && (
-            <form onSubmit={handleBid} className="flex gap-2">
+            <form onSubmit={handleBid} className="flex flex-col gap-2">
               <input
                 type="text"
                 inputMode="numeric"
@@ -494,13 +622,26 @@ const AuctionDetails = () => {
                   const v = e.target.value;
                   if (v === "" || /^\d+$/.test(v)) setBidAmount(v);
                 }}
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
               />
+              {/* Quick increment buttons */}
+              <div className="flex gap-2">
+                {[{ label: "+1K", value: 1000 }, { label: "+5K", value: 5000 }, { label: "+10K", value: 10000 }].map(({ label, value }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => handleIncrement(value)}
+                    className="flex-1 border border-indigo-300 text-indigo-600 text-sm font-medium py-1.5 rounded-lg hover:bg-indigo-50 active:bg-indigo-100 transition-colors"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <button
                 type="submit"
                 disabled={placingBid}
-                className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 font-medium"
+                className="w-full bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 font-medium"
               >
                 {placingBid ? "Placing..." : "Place Bid"}
               </button>
@@ -537,68 +678,6 @@ const AuctionDetails = () => {
             </p>
           )}
         </div>
-      </div>
-
-      {/* ── Bid History ── */}
-      <div className="mt-10">
-        <h2 className="text-xl font-semibold mb-4">
-          Bid History ({bids.length} bid{bids.length !== 1 ? "s" : ""})
-        </h2>
-        {bids.length === 0 ? (
-          <p className="text-gray-500">No bids yet. Be the first!</p>
-        ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-sm font-medium text-gray-600">#</th>
-                  <th className="px-4 py-3 text-sm font-medium text-gray-600">
-                    Bidder
-                  </th>
-                  <th className="px-4 py-3 text-sm font-medium text-gray-600">
-                    Amount
-                  </th>
-                  <th className="px-4 py-3 text-sm font-medium text-gray-600">
-                    Time
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {bids.map((bid, i) => {
-                  const diff = now - new Date(bid.createdAt).getTime();
-                  const secs = Math.floor(diff / 1000);
-                  const timeAgo =
-                    secs < 60 ? "Just now"
-                    : secs < 3600 ? `${Math.floor(secs / 60)}m ago`
-                    : secs < 86400 ? `${Math.floor(secs / 3600)}h ago`
-                    : new Date(bid.createdAt).toLocaleDateString();
-
-                  return (
-                    <tr
-                      key={i}
-                      className={`border-t ${i === 0 ? "bg-indigo-50" : ""}`}
-                    >
-                      <td className="px-4 py-3 text-sm text-gray-400">{bids.length - i}</td>
-                      <td className="px-4 py-3 text-sm">
-                        {bid.bidderId?._id === user?._id ? (
-                          <span className="font-semibold text-indigo-600">You</span>
-                        ) : (
-                          bid.bidderId?.name || "Anonymous"
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-semibold">
-                        Rs. {bid.amount}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500" title={new Date(bid.createdAt).toLocaleString()}>
-                        {timeAgo}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
 
       {/* ── Image Lightbox ── */}

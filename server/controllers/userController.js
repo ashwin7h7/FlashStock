@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
+import mongoose from "mongoose";
 
 const buildCookieOptions = () => {
   const isProd = process.env.NODE_ENV === "production";
@@ -235,6 +236,30 @@ export const updateProfile = async (req, res) => {
     if (error?.code === 11000 && error?.keyPattern?.email) {
       return res.status(409).json({ success: false, message: "Email already in use by another account" });
     }
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/user/:userId/profile  (public — returns only non-sensitive seller info)
+export const getPublicSellerProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: "Invalid user id" });
+    }
+    const user = await User.findById(userId).select("name location profileImage");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Seller not found" });
+    }
+    return res.json({
+      success: true,
+      seller: {
+        name: user.name,
+        location: user.location || "",
+        profileImage: user.profileImage || "",
+      },
+    });
+  } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };

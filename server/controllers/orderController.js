@@ -38,7 +38,7 @@ export const getUserOrders = async (req, res) => {
     const orders = await Order.find({ userId: req.userId })
       .populate({
         path: "productId",
-        populate: { path: "sellerId", select: "name email" },
+        populate: { path: "sellerId", select: "name email phone location" },
       })
       .sort({ purchasedAt: -1 });
 
@@ -54,7 +54,7 @@ export const getUserOrderById = async (req, res) => {
   try {
     const order = await Order.findOne({ _id: req.params.id, userId: req.userId }).populate({
       path: "productId",
-      populate: { path: "sellerId", select: "name email" },
+      populate: { path: "sellerId", select: "name email phone location" },
     });
 
     if (!order) {

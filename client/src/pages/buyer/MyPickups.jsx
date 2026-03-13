@@ -179,6 +179,11 @@ const MyPickups = () => {
         <div className="space-y-5">
           {pickups.map((p) => (
             <div key={p._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              {(() => {
+                const sellerPhone = p.sellerId?.phone?.trim() || "Phone not added yet";
+                const sellerLocation = p.sellerId?.location?.trim() || p.productId?.location || "Not added yet";
+                return (
+                  <>
               {/* Card Header */}
               <div className="flex items-center gap-4 p-5 border-b border-gray-50">
                 {p.productId?.image ? (
@@ -203,6 +208,28 @@ const MyPickups = () => {
                   {p.productId?.location && (
                     <p className="text-xs text-indigo-600 mt-0.5">📍 Pickup Area: {p.productId.location}</p>
                   )}
+                </div>
+              </div>
+
+              <div className="px-5 pt-3 pb-2 border-b border-gray-50">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Seller Contact</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="bg-gray-50 rounded-lg p-2.5">
+                    <p className="text-[11px] text-gray-500">Name</p>
+                    <p className="text-sm font-medium text-gray-900">{p.sellerId?.name || "Seller"}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2.5">
+                    <p className="text-[11px] text-gray-500">Email</p>
+                    <p className="text-sm font-medium text-gray-900 break-words">{p.sellerId?.email || "Not added yet"}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2.5">
+                    <p className="text-[11px] text-gray-500">Phone</p>
+                    <p className="text-sm font-medium text-gray-900">{sellerPhone}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2.5">
+                    <p className="text-[11px] text-gray-500">District / Location</p>
+                    <p className="text-sm font-medium text-gray-900">{sellerLocation}</p>
+                  </div>
                 </div>
               </div>
 
@@ -296,6 +323,9 @@ const MyPickups = () => {
                   </span>
                 )}
               </div>
+                  </>
+                );
+              })()}
             </div>
           ))}
         </div>

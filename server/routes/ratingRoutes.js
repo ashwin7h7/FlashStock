@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.post("/", authUser, submitSellerRating);
 router.get("/mine", authUser, getMySubmittedRatings);
-router.get("/seller/:sellerId", authUser, getSellerRatingSummary);
+router.get("/seller/:sellerId", getSellerRatingSummary); // public — only aggregate summary
 
 export default router;

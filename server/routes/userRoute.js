@@ -1,5 +1,5 @@
 import express from "express";
-import { isAuth, login, logout, register, updateProfile, upgradeToSeller } from "../controllers/userController.js";
+import { isAuth, login, logout, register, updateProfile, upgradeToSeller, getPublicSellerProfile } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
 import { upload } from "../config/multer.js";
 
@@ -14,5 +14,8 @@ userRouter.get("/logout", authUser, logout);
 // Upgrade to seller route
 userRouter.patch("/upgrade-to-seller", authUser, upgradeToSeller);
 userRouter.patch("/profile", authUser, upload.single("profileImage"), updateProfile);
+
+// Public seller profile (name, location, avatar only — no sensitive data)
+userRouter.get("/:userId/profile", getPublicSellerProfile);
 
 export default userRouter;

@@ -80,6 +80,8 @@ const WonAuctionDetails = () => {
   const seller = product.sellerId;
   const pickupCompleted = pickup?.pickupStatus === "completed";
   const canConfirmPickup = pickup && !pickupCompleted && !pickup.buyerConfirmed;
+  const sellerLocation = seller?.location?.trim() || product?.location || "Not added yet";
+  const sellerPhone = seller?.phone?.trim() || "Phone not added yet";
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -185,6 +187,28 @@ const WonAuctionDetails = () => {
             <div className="bg-indigo-50 p-4 rounded-lg">
               <p className="text-xs text-gray-500">Pickup Location</p>
               <p className="text-lg font-semibold">{product.location || "—"}</p>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mb-6">
+            <h3 className="text-lg font-semibold mb-3">Seller Contact</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Seller Name</p>
+                <p className="font-semibold text-gray-900">{seller?.name || "Seller"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Email</p>
+                <p className="font-semibold text-gray-900 break-words">{seller?.email || "Not added yet"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Phone</p>
+                <p className="font-semibold text-gray-900">{sellerPhone}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">District / Location</p>
+                <p className="font-semibold text-gray-900">{sellerLocation}</p>
+              </div>
             </div>
           </div>
 
