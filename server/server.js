@@ -24,6 +24,21 @@ import User from "./models/User.js";
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 4000;
+const allowedOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+};
 
 // Connect Database
 await connectDB();
@@ -34,7 +49,7 @@ await connectCloudinary();
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors(corsOptions));
 
 // Routes
 //http://localhost:4000/
@@ -50,7 +65,7 @@ app.use("/api/pickups", pickupRoutes);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     methods: ["GET", "POST"]
   }
 });
@@ -274,5 +289,5 @@ setInterval(endExpiredAuctions, 10 * 1000);
 
 // Start server
 server.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });

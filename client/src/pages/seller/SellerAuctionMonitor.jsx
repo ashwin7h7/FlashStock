@@ -13,6 +13,7 @@ const SellerAuctionMonitor = () => {
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState("");
   const [ended, setEnded] = useState(false);
+  const [error, setError] = useState("");
 
   const socketRef = useRef(null);
 
@@ -32,6 +33,7 @@ const SellerAuctionMonitor = () => {
         }
       } catch (err) {
         console.error("Failed to load product:", err.response?.data || err.message);
+        setError("Failed to load auction details.");
       }
 
       try {
@@ -39,6 +41,7 @@ const SellerAuctionMonitor = () => {
         if (bidRes.data.success) setBids(bidRes.data.bids);
       } catch (err) {
         console.error("Failed to load bid history:", err.response?.data || err.message);
+        setError((prev) => prev || "Failed to load bid history.");
       }
 
       setLoading(false);
@@ -126,6 +129,12 @@ const SellerAuctionMonitor = () => {
 
       <h1 className="text-2xl font-bold mb-6">Auction Monitor</h1>
 
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       {!isOwner && (
         <p className="text-amber-600 bg-amber-50 p-3 rounded-lg mb-4 text-sm">
           This auction does not belong to you.
@@ -200,7 +209,7 @@ const SellerAuctionMonitor = () => {
           <div className="flex items-center gap-3 mb-4">
             {ended ? (
               <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
-                Auction Ended
+                Ended
               </span>
             ) : (
               <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700 animate-pulse">

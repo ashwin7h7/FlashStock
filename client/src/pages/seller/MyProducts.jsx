@@ -126,7 +126,7 @@ const MyProducts = () => {
                 <div className="mt-2">
                   {(() => {
                     const label = getAuctionLabel(p);
-                    return <span className={`px-2 py-1 text-xs rounded ${label.color}`}>{label.text}</span>;
+                    return <span className={`px-2 py-1 text-xs rounded-full font-medium ${label.color}`}>{label.text}</span>;
                   })()}
                   {p.isAuction && p.auctionStatus === "active" && (
                     <div className="mt-1">
@@ -173,7 +173,7 @@ const MyProducts = () => {
                         </div>
                         <div className="flex gap-2">
                           <button type="submit" disabled={starting}
-                            className="flex-1 bg-green-600 text-white py-1 rounded text-sm hover:bg-green-700 disabled:opacity-50">
+                            className="flex-1 bg-green-600 text-white py-1 rounded text-sm hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed">
                             {starting ? "Starting..." : "Start"}
                           </button>
                           <button type="button" onClick={() => setAuctionForm(null)}

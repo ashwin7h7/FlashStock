@@ -7,6 +7,10 @@ This app uses **httpOnly cookie-based JWT authentication**. All tabs in the same
 browser profile share one cookie, so logging in as a second user in another tab
 will overwrite the first session.
 
+## Deployment
+
+Deployment setup, required environment variables, and build/run commands are documented in [DEPLOYMENT.md](DEPLOYMENT.md).
+
 To test multiple users at the same time (e.g. two buyers bidding):
 
 - **Chrome + Firefox** — open each user in a different browser

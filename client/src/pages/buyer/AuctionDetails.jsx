@@ -18,6 +18,8 @@ const AuctionDetails = () => {
   const [selectedImg, setSelectedImg] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [orderInfo, setOrderInfo] = useState(null);
+  const [pageError, setPageError] = useState("");
+  const [placingBid, setPlacingBid] = useState(false);
 
   const socketRef = useRef(null);
 
@@ -37,6 +39,7 @@ const AuctionDetails = () => {
         }
       } catch (err) {
         console.error("Failed to load product:", err.response?.data || err.message);
+        setPageError("Failed to load auction details.");
       }
 
       try {
@@ -44,6 +47,7 @@ const AuctionDetails = () => {
         if (bidRes.data.success) setBids(bidRes.data.bids);
       } catch (err) {
         console.error("Failed to load bid history:", err.response?.data || err.message);
+        setPageError((prev) => prev || "Failed to load bid history.");
       }
 
       setLoading(false);
@@ -106,6 +110,7 @@ const AuctionDetails = () => {
     // Backend emits: { auctionId, amount, bidderId, bidderName }
     socket.on("bidUpdate", ({ auctionId, amount, bidderId, bidderName }) => {
       if (auctionId !== id) return;
+      setPlacingBid(false);
       setProduct((prev) =>
         prev ? { ...prev, offerPrice: amount, highestBidderId: bidderId } : prev
       );
@@ -125,6 +130,7 @@ const AuctionDetails = () => {
 
     // Backend emits: { auctionId, message }
     socket.on("bidError", ({ message: msg }) => {
+      setPlacingBid(false);
       setMessage({ text: msg, error: true });
     });
 
@@ -176,6 +182,7 @@ const AuctionDetails = () => {
       bidderId: user._id,
       amount,
     });
+    setPlacingBid(true);
     setBidAmount("");
   };
 
@@ -217,6 +224,11 @@ const AuctionDetails = () => {
 
         {/* Details + bid form */}
         <div>
+          {pageError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {pageError}
+            </div>
+          )}
           <h1 className="text-2xl font-bold mb-1">{product.name}</h1>
           <p className="text-sm text-gray-400 mb-3">Category: {product.category}</p>
           <p className="text-gray-600 mb-4">{product.description}</p>
@@ -337,9 +349,10 @@ const AuctionDetails = () => {
               />
               <button
                 type="submit"
+                disabled={placingBid}
                 className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 font-medium"
               >
-                Place Bid
+                {placingBid ? "Placing..." : "Place Bid"}
               </button>
             </form>
           )}

@@ -5,6 +5,7 @@ import API from "../../api/axios";
 const WonAuctions = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -13,6 +14,7 @@ const WonAuctions = () => {
         if (data.success) setOrders(data.orders);
       } catch (err) {
         console.error(err);
+        setError("Failed to load won auctions.");
       } finally {
         setLoading(false);
       }
@@ -43,6 +45,12 @@ const WonAuctions = () => {
           <p className="text-sm text-gray-500 mt-1">Track won items and complete pickup confirmation.</p>
         </div>
       </div>
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {orders.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">

@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
 const MyActiveBids = () => {
-  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchMyBids = async () => {
@@ -15,6 +14,7 @@ const MyActiveBids = () => {
         if (data.success) setItems(data.items);
       } catch (err) {
         console.error("Failed to load my bids:", err);
+        setError("Failed to load your bids.");
       } finally {
         setLoading(false);
       }
@@ -54,6 +54,11 @@ const MyActiveBids = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">My Active Bids</h1>
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
       {items.length === 0 ? (
         <div className="bg-indigo-50 border border-indigo-200 p-8 rounded-lg text-center">
           <p className="text-gray-600 text-lg">You haven't placed any bids yet.</p>

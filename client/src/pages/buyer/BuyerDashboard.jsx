@@ -9,6 +9,7 @@ const BuyerDashboard = () => {
   const [activeBids, setActiveBids] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,6 +33,7 @@ const BuyerDashboard = () => {
         }
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
+        setError("Failed to load dashboard data. Please refresh.");
       } finally {
         setLoading(false);
       }
@@ -46,6 +48,11 @@ const BuyerDashboard = () => {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8">Buyer Dashboard</h1>
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">

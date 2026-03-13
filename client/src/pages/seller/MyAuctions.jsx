@@ -8,6 +8,8 @@ const MyAuctions = () => {
   const [loading, setLoading] = useState(true);
   const [startForm, setStartForm] = useState({ productId: "", startingBid: "", endTime: "" });
   const [message, setMessage] = useState({ text: "", error: false });
+  const [error, setError] = useState("");
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -23,6 +25,7 @@ const MyAuctions = () => {
       if (pickupRes.data.success) setPickups(pickupRes.data.pickups);
     } catch (err) {
       console.error(err);
+      setError("Failed to load auctions. Please refresh.");
     } finally {
       setLoading(false);
     }
@@ -39,11 +42,11 @@ const MyAuctions = () => {
   };
 
   const getStatusLabel = (p) => {
-    if (!p.isAuction) return { text: "No auction", color: "text-blue-600" };
-    if (p.auctionStatus === "active") return { text: "Active", color: "text-green-600" };
-    if (hasCompletedPickup(p._id)) return { text: "Pickup Completed", color: "text-purple-600" };
-    if (p.winnerId) return { text: "Ended (Winner Selected)", color: "text-amber-600" };
-    return { text: "Ended (No Bids)", color: "text-gray-500" };
+    if (!p.isAuction) return { text: "No auction", color: "bg-blue-100 text-blue-700" };
+    if (p.auctionStatus === "active") return { text: "Live", color: "bg-green-100 text-green-700" };
+    if (hasCompletedPickup(p._id)) return { text: "Pickup Completed", color: "bg-purple-100 text-purple-700" };
+    if (p.winnerId) return { text: "Ended (Winner)", color: "bg-amber-100 text-amber-700" };
+    return { text: "Ended (No Bids)", color: "bg-gray-100 text-gray-700" };
   };
 
   const openForm = (productId) => {
@@ -55,6 +58,7 @@ const MyAuctions = () => {
   const handleStartAuction = async (e) => {
     e.preventDefault();
     setMessage({ text: "", error: false });
+    setStarting(true);
     try {
       const { data } = await API.post("/auction/start", {
         productId: startForm.productId,
@@ -70,6 +74,8 @@ const MyAuctions = () => {
       }
     } catch (err) {
       setMessage({ text: err.response?.data?.message || "Failed to start auction", error: true });
+    } finally {
+      setStarting(false);
     }
   };
 
@@ -82,6 +88,11 @@ const MyAuctions = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">My Auctions</h1>
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* Start auction form */}
       <div className="bg-white rounded-lg shadow p-6 mb-8 max-w-lg">
@@ -121,8 +132,12 @@ const MyAuctions = () => {
                 onChange={(e) => setStartForm({ ...startForm, endTime: e.target.value })}
                 className="w-full border border-gray-300 rounded px-3 py-2" />
             </div>
-            <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">
-              Start Auction
+            <button
+              type="submit"
+              disabled={starting}
+              className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {starting ? "Starting..." : "Start Auction"}
             </button>
           </form>
         )}
@@ -143,7 +158,7 @@ const MyAuctions = () => {
                 <p className="text-xs text-gray-500 mt-0.5">Starting bid: Rs. {p.startingBid ?? "—"}</p>
                 <p className="text-xs text-gray-400 mt-1">Ends {new Date(p.auctionEndTime).toLocaleString()}</p>
                 <div className="flex items-center justify-between mt-3">
-                  <span className="px-2 py-0.5 text-xs rounded bg-green-100 text-green-700">Active</span>
+                    <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-green-100 text-green-700">Live</span>
                   <Link
                     to={`/seller/auctions/${p._id}`}
                     className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
@@ -172,7 +187,7 @@ const MyAuctions = () => {
                   <h3 className="font-semibold">{p.name}</h3>
                   <p className="text-gray-600">Final: Rs. {p.offerPrice}</p>
                   <div className="flex items-center justify-between mt-2">
-                    <span className={`text-xs ${label.color}`}>{label.text}</span>
+                    <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${label.color}`}>{label.text}</span>
                     <Link
                       to={`/seller/auctions/${p._id}`}
                       className="text-xs text-indigo-600 hover:underline"

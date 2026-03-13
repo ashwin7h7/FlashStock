@@ -4,6 +4,8 @@ import API from "../../api/axios";
 const MyPickups = () => {
   const [pickups, setPickups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [confirmingId, setConfirmingId] = useState("");
 
   useEffect(() => {
     const fetch = async () => {
@@ -12,6 +14,7 @@ const MyPickups = () => {
         if (data.success) setPickups(data.pickups);
       } catch (err) {
         console.error(err);
+        setError("Failed to load pickups.");
       } finally {
         setLoading(false);
       }
@@ -20,6 +23,7 @@ const MyPickups = () => {
   }, []);
 
   const confirmPickup = async (pickupId) => {
+    setConfirmingId(pickupId);
     try {
       const { data } = await API.patch(`/pickups/${pickupId}/confirm-buyer`);
       if (data.success) {
@@ -29,6 +33,9 @@ const MyPickups = () => {
       }
     } catch (err) {
       console.error(err);
+      setError(err.response?.data?.message || "Failed to confirm pickup.");
+    } finally {
+      setConfirmingId("");
     }
   };
 
@@ -37,12 +44,17 @@ const MyPickups = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">My Pickups</h1>
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
       {pickups.length === 0 ? (
-        <p className="text-gray-500">No pickups yet.</p>
+        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">No pickups yet.</div>
       ) : (
         <div className="space-y-4">
           {pickups.map((p) => (
-            <div key={p._id} className="bg-white rounded-lg shadow p-4 flex justify-between items-center">
+            <div key={p._id} className="bg-white rounded-lg shadow p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div>
                 <p className="font-semibold">{p.productId?.name || "Product"}</p>
                 <p className="text-sm text-gray-500">Status: <span className="font-medium">{p.status}</span></p>
@@ -53,9 +65,10 @@ const MyPickups = () => {
               {!p.buyerConfirmed && p.status === "pending" && (
                 <button
                   onClick={() => confirmPickup(p._id)}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  disabled={confirmingId === p._id}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Confirm Pickup
+                  {confirmingId === p._id ? "Confirming..." : "Confirm Pickup"}
                 </button>
               )}
               {p.status === "completed" && (
