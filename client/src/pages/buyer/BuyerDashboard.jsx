@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
 const BuyerDashboard = () => {
-  const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [activeBids, setActiveBids] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -90,7 +88,7 @@ const BuyerDashboard = () => {
       {/* Quick Links */}
       <div className="mb-10">
         <h2 className="text-xl font-semibold mb-4">Quick Links</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <Link to="/auctions" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
             <p className="text-2xl mb-2">🏬</p>
             <p className="text-sm font-medium text-gray-700">Browse Auctions</p>
@@ -106,6 +104,10 @@ const BuyerDashboard = () => {
           <Link to="/buyer/pickups" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
             <p className="text-2xl mb-2">📦</p>
             <p className="text-sm font-medium text-gray-700">Pickups</p>
+          </Link>
+          <Link to="/buyer/negotiations" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
+            <p className="text-2xl mb-2">💬</p>
+            <p className="text-sm font-medium text-gray-700">Negotiations</p>
           </Link>
           <Link to="/buyer/notifications" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center relative">
             <p className="text-2xl mb-2">🔔</p>

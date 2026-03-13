@@ -1,12 +1,18 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect, useRef, useEffectEvent } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { connectSocket, disconnectSocket } from "../../services/socket";
+import { getEndedAuctionState, isAuctionClosedByNegotiation, isAuctionFinalized } from "../../utils/auctionState";
+import { startNegotiation } from "../../services/negotiationApi";
+
+const FINAL_STATE_RETRY_DELAY_MS = 2000;
+const FINAL_STATE_RETRY_LIMIT = 6;
 
 const AuctionDetails = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, isSeller: isSellerRole } = useAuth();
 
   const [product, setProduct] = useState(null);
   const [bids, setBids] = useState([]);
@@ -15,49 +21,117 @@ const AuctionDetails = () => {
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState("");
   const [ended, setEnded] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const [selectedImg, setSelectedImg] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [orderInfo, setOrderInfo] = useState(null);
   const [pageError, setPageError] = useState("");
   const [placingBid, setPlacingBid] = useState(false);
+  const [startingNegotiation, setStartingNegotiation] = useState(false);
 
   const socketRef = useRef(null);
+  const finalStateRetryRef = useRef(null);
+
+  const applyAuctionSnapshot = (nextProduct, nextBids) => {
+    if (nextProduct) {
+      setProduct(nextProduct);
+      setEnded(
+        isAuctionFinalized(nextProduct) ||
+          new Date(nextProduct.auctionEndTime) <= new Date()
+      );
+    }
+
+    if (nextBids) {
+      setBids(nextBids);
+    }
+
+    return {
+      product: nextProduct ?? product,
+      bids: nextBids ?? bids,
+    };
+  };
+
+  const fetchAuctionSnapshot = useEffectEvent(async () => {
+    const [productRes, bidRes] = await Promise.allSettled([
+      API.get(`/product/${id}`),
+      API.get(`/auction/${id}/bids`),
+    ]);
+
+    let nextProduct = null;
+    let nextBids = null;
+    let nextError = "";
+
+    if (productRes.status === "fulfilled" && productRes.value.data.success) {
+      nextProduct = productRes.value.data.product;
+    } else if (productRes.status === "rejected") {
+      console.error("Failed to load product:", productRes.reason.response?.data || productRes.reason.message);
+      nextError = "Failed to load auction details.";
+    }
+
+    if (bidRes.status === "fulfilled" && bidRes.value.data.success) {
+      nextBids = bidRes.value.data.bids;
+    } else if (bidRes.status === "rejected") {
+      console.error("Failed to load bid history:", bidRes.reason.response?.data || bidRes.reason.message);
+      nextError = nextError || "Failed to load bid history.";
+    }
+
+    const snapshot = applyAuctionSnapshot(nextProduct, nextBids);
+    setPageError(nextError);
+
+    return snapshot;
+  });
+
+  const clearFinalStateRetry = () => {
+    if (finalStateRetryRef.current) {
+      window.clearTimeout(finalStateRetryRef.current);
+      finalStateRetryRef.current = null;
+    }
+  };
+
+  const refreshFinalAuctionState = useEffectEvent(async function refreshFinalAuctionStateImpl(attempt = 0) {
+    clearFinalStateRetry();
+
+    try {
+      const snapshot = await fetchAuctionSnapshot();
+      const latestProduct = snapshot.product;
+
+      if (!latestProduct?.isAuction) return;
+
+      const isExpired = latestProduct.auctionEndTime && new Date(latestProduct.auctionEndTime) <= new Date();
+      const isBackendFinal = isAuctionFinalized(latestProduct);
+
+      if (!isBackendFinal && isExpired && attempt < FINAL_STATE_RETRY_LIMIT) {
+        finalStateRetryRef.current = window.setTimeout(() => {
+          void refreshFinalAuctionStateImpl(attempt + 1);
+        }, FINAL_STATE_RETRY_DELAY_MS);
+      }
+    } catch (err) {
+      console.error("Failed to refresh final auction state:", err.response?.data || err.message);
+    }
+  });
 
   // ───── Fetch product + bid history ─────
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const productRes = await API.get(`/product/${id}`);
-        if (productRes.data.success) {
-          const p = productRes.data.product;
-          setProduct(p);
-          setEnded(
-            !p.isAuction ||
-            p.auctionStatus === "ended" ||
-            new Date(p.auctionEndTime) <= new Date()
-          );
-        }
-      } catch (err) {
-        console.error("Failed to load product:", err.response?.data || err.message);
-        setPageError("Failed to load auction details.");
-      }
-
-      try {
-        const bidRes = await API.get(`/auction/${id}/bids`);
-        if (bidRes.data.success) setBids(bidRes.data.bids);
-      } catch (err) {
-        console.error("Failed to load bid history:", err.response?.data || err.message);
-        setPageError((prev) => prev || "Failed to load bid history.");
-      }
-
+      await fetchAuctionSnapshot();
       setLoading(false);
     };
     fetchData();
+
+    return () => clearFinalStateRetry();
   }, [id]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const { resolvedWinnerId, endedWithWinner, endedWithNoBids } = getEndedAuctionState(product, bids);
+  const isUserWinner = Boolean(resolvedWinnerId && resolvedWinnerId === user?._id);
 
   // ───── Fetch order/pickup info if user won ─────
   useEffect(() => {
-    if (!ended || !product?.winnerId || product.winnerId !== user?._id) return;
+    if (!ended || !resolvedWinnerId || resolvedWinnerId !== user?._id) return;
 
     const fetchOrderInfo = async () => {
       try {
@@ -73,7 +147,7 @@ const AuctionDetails = () => {
       }
     };
     fetchOrderInfo();
-  }, [ended, product?.winnerId, user?._id, id]);
+  }, [ended, resolvedWinnerId, product?.winnerId, user?._id, id]);
 
   // ───── Countdown timer ─────
   useEffect(() => {
@@ -84,6 +158,7 @@ const AuctionDetails = () => {
       if (diff <= 0) {
         setTimeLeft("Ended");
         setEnded(true);
+        void refreshFinalAuctionState();
         return;
       }
       const d = Math.floor(diff / 86400000);
@@ -134,19 +209,34 @@ const AuctionDetails = () => {
       setMessage({ text: msg, error: true });
     });
 
-    // Backend emits: { auctionId, winner, finalBid }
-    socket.on("auctionEnded", ({ auctionId, winner, finalBid }) => {
+    // Backend emits: { auctionId, winnerId, highestBidderId, finalBid, hasAcceptedBids }
+    socket.on("auctionEnded", ({ auctionId, winnerId, highestBidderId, finalBid, hasAcceptedBids }) => {
       if (auctionId !== id) return;
+
+      const resolvedSocketWinnerId = winnerId || highestBidderId || null;
+
       setEnded(true);
       setProduct((prev) =>
         prev
-          ? { ...prev, auctionStatus: "ended", offerPrice: finalBid, winnerId: winner }
+          ? {
+              ...prev,
+              auctionStatus: "ended",
+              offerPrice: finalBid ?? prev.offerPrice,
+              highestBidderId: resolvedSocketWinnerId ?? prev.highestBidderId,
+              winnerId: resolvedSocketWinnerId ?? prev.winnerId,
+            }
           : prev
       );
       setMessage({
-        text: winner === user?._id ? "You won this auction!" : "Auction has ended.",
+        text:
+          resolvedSocketWinnerId === user?._id
+            ? "You won this auction!"
+            : hasAcceptedBids
+              ? "Auction has ended. Final state updated."
+              : "Auction ended with no bids.",
         error: false,
       });
+      void refreshFinalAuctionState();
     });
 
     return () => {
@@ -191,7 +281,35 @@ const AuctionDetails = () => {
   if (!product)
     return <div className="text-center py-20 text-gray-500">Auction not found.</div>;
 
-  const isSeller = user && String(product.sellerId) === String(user._id);
+  const isProductSeller = user && String(product.sellerId) === String(user._id);
+  const closedByNegotiationState = isAuctionClosedByNegotiation(product);
+  const canNegotiate = Boolean(
+    user &&
+      !isSellerRole() &&
+      !isProductSeller &&
+      product?.isAuction &&
+      product?.auctionStatus === "active"
+  );
+
+  const handleStartNegotiation = async () => {
+    if (!canNegotiate) return;
+
+    try {
+      setStartingNegotiation(true);
+      setMessage({ text: "", error: false });
+
+      const data = await startNegotiation(product._id);
+      if (!data.success || !data.negotiation?._id) {
+        throw new Error(data.message || "Failed to open negotiation");
+      }
+
+      navigate(`/buyer/negotiations/${data.negotiation._id}`);
+    } catch (err) {
+      setMessage({ text: err.message || "Failed to start negotiation", error: true });
+    } finally {
+      setStartingNegotiation(false);
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -258,7 +376,11 @@ const AuctionDetails = () => {
 
           {/* Status badge + countdown */}
           <div className="flex items-center gap-3 mb-4">
-            {ended ? (
+            {closedByNegotiationState ? (
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
+                Closed by Negotiation
+              </span>
+            ) : ended ? (
               <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
                 Auction Ended
               </span>
@@ -275,16 +397,41 @@ const AuctionDetails = () => {
           </div>
 
           <p className="text-xs text-gray-400 mb-4">
-            {ended ? "Ended" : "Ends"}:{" "}
+            {closedByNegotiationState ? "Closed" : ended ? "Ended" : "Ends"}:{" "}
             {new Date(product.auctionEndTime).toLocaleString()}
           </p>
 
+          {closedByNegotiationState && (
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg mb-4">
+              <p className="text-amber-800 font-semibold">
+                This auction has been closed by negotiation.
+              </p>
+              <p className="text-sm text-amber-700 mt-1">
+                Final negotiated amount: Rs. {product.offerPrice}
+              </p>
+            </div>
+          )}
+
           {/* Winner banner */}
-          {ended && product.winnerId && product.winnerId === user?._id && (
+          {ended && !closedByNegotiationState && endedWithWinner && isUserWinner && (
             <div className="bg-green-50 border border-green-200 p-3 rounded-lg mb-4">
               <p className="text-green-700 font-semibold">
                 You won this auction!
               </p>
+            </div>
+          )}
+
+          {ended && !closedByNegotiationState && endedWithWinner && !isUserWinner && (
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
+              <p className="text-blue-700 font-semibold">
+                Auction ended. Winning bid: Rs. {product.offerPrice}
+              </p>
+            </div>
+          )}
+
+          {ended && !closedByNegotiationState && endedWithNoBids && (
+            <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg mb-4">
+              <p className="text-gray-600 text-sm">Auction ended with no bids.</p>
             </div>
           )}
 
@@ -333,7 +480,7 @@ const AuctionDetails = () => {
           )}
 
           {/* Bid form — only for logged-in non-seller while auction is live */}
-          {!ended && user && !isSeller && (
+          {!ended && user && !isProductSeller && (
             <form onSubmit={handleBid} className="flex gap-2">
               <input
                 type="text"
@@ -357,8 +504,21 @@ const AuctionDetails = () => {
             </form>
           )}
 
+          {canNegotiate && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleStartNegotiation}
+                disabled={startingNegotiation}
+                className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-60"
+              >
+                {startingNegotiation ? "Opening..." : "Make Offer"}
+              </button>
+            </div>
+          )}
+
           {/* Seller cannot bid */}
-          {isSeller && !ended && (
+          {isProductSeller && !ended && (
             <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
               You cannot bid on your own auction.
             </p>
@@ -402,7 +562,7 @@ const AuctionDetails = () => {
               </thead>
               <tbody>
                 {bids.map((bid, i) => {
-                  const diff = Date.now() - new Date(bid.createdAt).getTime();
+                  const diff = now - new Date(bid.createdAt).getTime();
                   const secs = Math.floor(diff / 1000);
                   const timeAgo =
                     secs < 60 ? "Just now"

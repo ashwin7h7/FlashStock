@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const BuyerLayout = () => {
-  const { user, logout, isSeller } = useAuth();
+  const { logout, isSeller } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -18,6 +18,7 @@ const BuyerLayout = () => {
           <div className="flex items-center gap-4 text-sm">
             <Link to="/buyer/dashboard" className="text-gray-700 hover:text-indigo-600">Dashboard</Link>
             <Link to="/buyer/bids" className="text-gray-700 hover:text-indigo-600">My Bids</Link>
+            <Link to="/buyer/negotiations" className="text-gray-700 hover:text-indigo-600">Negotiations</Link>
             <Link to="/buyer/won" className="text-gray-700 hover:text-indigo-600">Won</Link>
             <Link to="/buyer/pickups" className="text-gray-700 hover:text-indigo-600">Pickups</Link>
             <Link to="/buyer/notifications" className="text-gray-700 hover:text-indigo-600">Notifications</Link>

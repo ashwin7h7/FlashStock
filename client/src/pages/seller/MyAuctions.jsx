@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import API from "../../api/axios";
+import { getEndedAuctionState } from "../../utils/auctionState";
 
 const MyAuctions = () => {
   const [products, setProducts] = useState([]);
@@ -35,17 +36,19 @@ const MyAuctions = () => {
     pickups.some((pk) => (pk.productId?._id || pk.productId) === productId && pk.status === "completed");
 
   const canStartOrRestart = (p) => {
+    const { hasAcceptedBids } = getEndedAuctionState(p);
     if (p.isAuction && p.auctionStatus === "active") return false;
-    if (p.winnerId) return false;
+    if (hasAcceptedBids) return false;
     if (hasCompletedPickup(p._id)) return false;
     return true;
   };
 
   const getStatusLabel = (p) => {
+    const { hasAcceptedBids } = getEndedAuctionState(p);
     if (!p.isAuction) return { text: "No auction", color: "bg-blue-100 text-blue-700" };
     if (p.auctionStatus === "active") return { text: "Live", color: "bg-green-100 text-green-700" };
     if (hasCompletedPickup(p._id)) return { text: "Pickup Completed", color: "bg-purple-100 text-purple-700" };
-    if (p.winnerId) return { text: "Ended (Winner)", color: "bg-amber-100 text-amber-700" };
+    if (hasAcceptedBids) return { text: "Ended (Winner)", color: "bg-amber-100 text-amber-700" };
     return { text: "Ended (No Bids)", color: "bg-gray-100 text-gray-700" };
   };
 

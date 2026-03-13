@@ -12,6 +12,7 @@ import auctionRoutes from "./routes/auctionRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import pickupRoutes from "./routes/pickupRoutes.js";
+import negotiationRoutes from "./routes/negotiationRoutes.js";
 
 import connectCloudinary from "./config/cloudinary.js";
 import Product from "./models/Product.js";
@@ -60,6 +61,7 @@ app.use("/api/auction", auctionRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/pickups", pickupRoutes);
+app.use("/api/negotiations", negotiationRoutes);
 
 // ---------------- SOCKET.IO ----------------
 
@@ -73,6 +75,35 @@ const io = new Server(server, {
 // In-memory auction state
 // { auctionId: { highestBid, highestBidder } }
 const auctionState = {};
+
+const buildAuctionBidFilter = (auction) => {
+  const filter = { productId: auction._id };
+  if (auction.auctionStartedAt) {
+    filter.createdAt = { $gte: auction.auctionStartedAt };
+  }
+  return filter;
+};
+
+const resolveFinalAuctionState = async (auction) => {
+  const topBid = await Bid.findOne(buildAuctionBidFilter(auction))
+    .sort({ amount: -1, createdAt: -1 })
+    .select("amount bidderId")
+    .lean();
+
+  const winnerId = topBid?.bidderId || auction.highestBidderId || null;
+  const finalBid = topBid?.amount ?? auction.offerPrice;
+  const hasAcceptedBids = Boolean(
+    topBid ||
+      auction.highestBidderId ||
+      ((Number(auction.offerPrice) || 0) > (Number(auction.startingBid) || 0))
+  );
+
+  return {
+    winnerId,
+    finalBid,
+    hasAcceptedBids,
+  };
+};
 
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
@@ -99,7 +130,7 @@ io.on("connection", (socket) => {
       }
 
       // 2. Check auction is active
-      if (!auction.isAuction || auction.auctionStatus === "ended") {
+      if (!auction.isAuction || auction.auctionStatus !== "active") {
         return socket.emit("bidError", { auctionId, message: "This auction is not active" });
       }
 
@@ -212,22 +243,23 @@ const endExpiredAuctions = async () => {
     });
 
     for (const auction of expiredAuctions) {
-      // Determine winner
-      const winnerId = auction.highestBidderId || null;
+      const { winnerId, finalBid, hasAcceptedBids } = await resolveFinalAuctionState(auction);
 
       // Mark auction as ended
       auction.auctionStatus = "ended";
-      auction.winnerId = winnerId;
+      auction.offerPrice = finalBid;
+      auction.highestBidderId = winnerId;
+      auction.winnerId = hasAcceptedBids ? winnerId : null;
       await auction.save();
 
       // Create order for winner (only if there is one and no order exists yet)
-      if (winnerId) {
+      if (hasAcceptedBids && winnerId) {
         const existingOrder = await Order.findOne({ productId: auction._id });
         if (!existingOrder) {
           const order = await Order.create({
             userId: winnerId,
             productId: auction._id,
-            price: auction.offerPrice
+            price: finalBid
           });
 
           // Create Pickup record
@@ -243,7 +275,7 @@ const endExpiredAuctions = async () => {
             userId: winnerId,
             type: "auction_won",
             title: "You won an auction!",
-            message: `Congratulations! You won "${auction.name}" with a bid of ${auction.offerPrice}.`,
+            message: `Congratulations! You won "${auction.name}" with a bid of ${finalBid}.`,
             relatedProductId: auction._id
           });
 
@@ -252,7 +284,7 @@ const endExpiredAuctions = async () => {
             userId: auction.sellerId,
             type: "auction_sold",
             title: "Your auction has ended!",
-            message: `Your product "${auction.name}" was sold for ${auction.offerPrice}.`,
+            message: `Your product "${auction.name}" was sold for ${finalBid}.`,
             relatedProductId: auction._id
           });
         }
@@ -269,9 +301,12 @@ const endExpiredAuctions = async () => {
 
       // Notify connected clients
       io.to(auction._id.toString()).emit("auctionEnded", {
-        auctionId: auction._id,
-        winner: winnerId,
-        finalBid: auction.offerPrice
+        auctionId: auction._id.toString(),
+        winnerId: winnerId ? winnerId.toString() : null,
+        highestBidderId: winnerId ? winnerId.toString() : null,
+        finalBid,
+        hasAcceptedBids,
+        auctionStatus: "ended"
       });
 
       // Clear in-memory state

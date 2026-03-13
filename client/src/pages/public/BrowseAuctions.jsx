@@ -18,6 +18,13 @@ const SORT_OPTIONS = [
   { value: "recently-added", label: "Recently Added" },
 ];
 
+const isLiveAuction = (auction, nowTs = Date.now()) => {
+  if (!auction?.isAuction) return false;
+  if (auction.auctionStatus !== "active") return false;
+  if (!auction.auctionEndTime) return false;
+  return new Date(auction.auctionEndTime).getTime() > nowTs;
+};
+
 const BrowseAuctions = () => {
   const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,18 +37,9 @@ const BrowseAuctions = () => {
   useEffect(() => {
     const fetchAuctions = async () => {
       try {
-        const [activeRes, endedRes] = await Promise.all([
-          API.get("/auction/active"),
-          API.get("/auction/ended"),
-        ]);
-
+        const activeRes = await API.get("/auction/active");
         const activeAuctions = activeRes.data?.success ? activeRes.data.auctions : [];
-        const endedAuctions = endedRes.data?.success ? endedRes.data.auctions : [];
-
-        const normalized = [
-          ...activeAuctions.map((a) => ({ ...a, _uiStatus: "live" })),
-          ...endedAuctions.map((a) => ({ ...a, _uiStatus: "ended" })),
-        ];
+        const normalized = activeAuctions.filter((a) => isLiveAuction(a));
 
         normalized.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         setAuctions(normalized);
@@ -78,6 +76,8 @@ const BrowseAuctions = () => {
     const query = search.trim().toLowerCase();
 
     const filtered = auctions.filter((item) => {
+      if (!isLiveAuction(item, now)) return false;
+
       const itemCategory = (item.category || "").toLowerCase();
       const matchesCategory = category === "all" || itemCategory === category;
       const matchesSearch =
@@ -98,7 +98,7 @@ const BrowseAuctions = () => {
     }
 
     return sorted;
-  }, [auctions, search, category, sortBy]);
+  }, [auctions, now, search, category, sortBy]);
 
   if (loading) return <div className="text-center py-20">Loading auctions...</div>;
 
@@ -107,7 +107,7 @@ const BrowseAuctions = () => {
       <div className="flex flex-col md:flex-row md:items-end gap-4 md:justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Browse Auctions</h1>
-          <p className="text-gray-500 mt-1">Discover live and recently ended auctions.</p>
+          <p className="text-gray-500 mt-1">Discover live auctions currently accepting bids.</p>
         </div>
       </div>
 
@@ -166,7 +166,6 @@ const BrowseAuctions = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAuctions.map((item) => {
-            const isLive = item._uiStatus === "live" && new Date(item.auctionEndTime).getTime() > now;
             return (
               <div
                 key={item._id}
@@ -179,8 +178,8 @@ const BrowseAuctions = () => {
               />
               <div className="p-4">
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isLive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
-                    {isLive ? "Live Auction" : "Ended"}
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                    Live Auction
                   </span>
                   <span className="text-xs text-gray-500 capitalize">{item.category || "others"}</span>
                 </div>
@@ -195,7 +194,7 @@ const BrowseAuctions = () => {
                   </div>
                   <div className="bg-gray-50 rounded p-2">
                     <p className="text-xs text-gray-500">Time Remaining</p>
-                    <p className={`font-semibold text-sm ${isLive ? "text-green-700" : "text-gray-500"}`}>
+                    <p className="font-semibold text-sm text-green-700">
                       {getTimeRemaining(item.auctionEndTime)}
                     </p>
                   </div>

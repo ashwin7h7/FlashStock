@@ -38,7 +38,7 @@ export const startAuction = async (req, res) => {
     }
 
     // Block restart if auction ended with a winner
-    if (product.auctionStatus === "ended" && product.winnerId) {
+    if (product.winnerId) {
       return res.status(400).json({ success: false, message: "Cannot restart — auction ended with a winner" });
     }
 
@@ -97,7 +97,7 @@ export const getEndedAuctions = async (req, res) => {
   try {
     const auctions = await Product.find({
       isAuction: true,
-      auctionStatus: "ended"
+      auctionStatus: { $in: ["ended", "closed_by_negotiation"] }
     })
       .populate("winnerId", "name email")
       .populate("sellerId", "name")

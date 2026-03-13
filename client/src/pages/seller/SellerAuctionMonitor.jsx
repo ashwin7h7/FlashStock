@@ -1,8 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useEffectEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { connectSocket, disconnectSocket } from "../../services/socket";
+import { getEndedAuctionState, isAuctionClosedByNegotiation, isAuctionFinalized } from "../../utils/auctionState";
+
+const FINAL_STATE_RETRY_DELAY_MS = 2000;
+const FINAL_STATE_RETRY_LIMIT = 6;
 
 const SellerAuctionMonitor = () => {
   const { id } = useParams();
@@ -16,38 +20,98 @@ const SellerAuctionMonitor = () => {
   const [error, setError] = useState("");
 
   const socketRef = useRef(null);
+  const finalStateRetryRef = useRef(null);
+
+  const applyAuctionSnapshot = (nextProduct, nextBids) => {
+    if (nextProduct) {
+      setProduct(nextProduct);
+      setEnded(
+        isAuctionFinalized(nextProduct) ||
+          new Date(nextProduct.auctionEndTime) <= new Date()
+      );
+    }
+
+    if (nextBids) {
+      setBids(nextBids);
+    }
+
+    return {
+      product: nextProduct ?? product,
+      bids: nextBids ?? bids,
+    };
+  };
+
+  const fetchAuctionSnapshot = useEffectEvent(async () => {
+    const [productRes, bidRes] = await Promise.allSettled([
+      API.get(`/product/${id}`),
+      API.get(`/auction/${id}/bids`),
+    ]);
+
+    let nextProduct = null;
+    let nextBids = null;
+    let nextError = "";
+
+    if (productRes.status === "fulfilled" && productRes.value.data.success) {
+      nextProduct = productRes.value.data.product;
+    } else if (productRes.status === "rejected") {
+      console.error("Failed to load product:", productRes.reason.response?.data || productRes.reason.message);
+      nextError = "Failed to load auction details.";
+    }
+
+    if (bidRes.status === "fulfilled" && bidRes.value.data.success) {
+      nextBids = bidRes.value.data.bids;
+    } else if (bidRes.status === "rejected") {
+      console.error("Failed to load bid history:", bidRes.reason.response?.data || bidRes.reason.message);
+      nextError = nextError || "Failed to load bid history.";
+    }
+
+    const snapshot = applyAuctionSnapshot(nextProduct, nextBids);
+    setError(nextError);
+
+    return snapshot;
+  });
+
+  const clearFinalStateRetry = () => {
+    if (finalStateRetryRef.current) {
+      window.clearTimeout(finalStateRetryRef.current);
+      finalStateRetryRef.current = null;
+    }
+  };
+
+  const refreshFinalAuctionState = useEffectEvent(async function refreshFinalAuctionStateImpl(attempt = 0) {
+    clearFinalStateRetry();
+
+    try {
+      const snapshot = await fetchAuctionSnapshot();
+      const latestProduct = snapshot.product;
+
+      if (!latestProduct?.isAuction) return;
+
+      const isExpired = latestProduct.auctionEndTime && new Date(latestProduct.auctionEndTime) <= new Date();
+      const isBackendFinal = isAuctionFinalized(latestProduct);
+
+      if (!isBackendFinal && isExpired && attempt < FINAL_STATE_RETRY_LIMIT) {
+        finalStateRetryRef.current = window.setTimeout(() => {
+          void refreshFinalAuctionStateImpl(attempt + 1);
+        }, FINAL_STATE_RETRY_DELAY_MS);
+      }
+    } catch (err) {
+      console.error("Failed to refresh final auction state:", err.response?.data || err.message);
+    }
+  });
 
   // ───── Fetch product + bid history ─────
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const productRes = await API.get(`/product/${id}`);
-        if (productRes.data.success) {
-          const p = productRes.data.product;
-          setProduct(p);
-          setEnded(
-            !p.isAuction ||
-            p.auctionStatus === "ended" ||
-            new Date(p.auctionEndTime) <= new Date()
-          );
-        }
-      } catch (err) {
-        console.error("Failed to load product:", err.response?.data || err.message);
-        setError("Failed to load auction details.");
-      }
-
-      try {
-        const bidRes = await API.get(`/auction/${id}/bids`);
-        if (bidRes.data.success) setBids(bidRes.data.bids);
-      } catch (err) {
-        console.error("Failed to load bid history:", err.response?.data || err.message);
-        setError((prev) => prev || "Failed to load bid history.");
-      }
-
+      await fetchAuctionSnapshot();
       setLoading(false);
     };
     fetchData();
+
+    return () => clearFinalStateRetry();
   }, [id]);
+
+  const { endedWithWinner, endedWithNoBids } = getEndedAuctionState(product, bids);
 
   // ───── Countdown timer ─────
   useEffect(() => {
@@ -58,6 +122,7 @@ const SellerAuctionMonitor = () => {
       if (diff <= 0) {
         setTimeLeft("Ended");
         setEnded(true);
+        void refreshFinalAuctionState();
         return;
       }
       const d = Math.floor(diff / 86400000);
@@ -96,14 +161,24 @@ const SellerAuctionMonitor = () => {
       ]);
     });
 
-    socket.on("auctionEnded", ({ auctionId, winner, finalBid }) => {
+    socket.on("auctionEnded", ({ auctionId, winnerId, highestBidderId, finalBid }) => {
       if (auctionId !== id) return;
+
+      const resolvedSocketWinnerId = winnerId || highestBidderId || null;
+
       setEnded(true);
       setProduct((prev) =>
         prev
-          ? { ...prev, auctionStatus: "ended", offerPrice: finalBid, winnerId: winner }
+          ? {
+              ...prev,
+              auctionStatus: "ended",
+              offerPrice: finalBid ?? prev.offerPrice,
+              highestBidderId: resolvedSocketWinnerId ?? prev.highestBidderId,
+              winnerId: resolvedSocketWinnerId ?? prev.winnerId,
+            }
           : prev
       );
+      void refreshFinalAuctionState();
     });
 
     return () => {
@@ -119,6 +194,7 @@ const SellerAuctionMonitor = () => {
     return <div className="text-center py-20 text-gray-500">Auction not found.</div>;
 
   const isOwner = user && String(product.sellerId) === String(user._id);
+  const closedByNegotiationState = isAuctionClosedByNegotiation(product);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -207,7 +283,11 @@ const SellerAuctionMonitor = () => {
 
           {/* Status badge + countdown */}
           <div className="flex items-center gap-3 mb-4">
-            {ended ? (
+            {closedByNegotiationState ? (
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
+                Closed by Negotiation
+              </span>
+            ) : ended ? (
               <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
                 Ended
               </span>
@@ -224,19 +304,30 @@ const SellerAuctionMonitor = () => {
           </div>
 
           <p className="text-xs text-gray-400">
-            {ended ? "Ended" : "Ends"}:{" "}
+            {closedByNegotiationState ? "Closed" : ended ? "Ended" : "Ends"}:{" "}
             {new Date(product.auctionEndTime).toLocaleString()}
           </p>
 
+          {closedByNegotiationState && (
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg mt-4">
+              <p className="text-amber-800 font-semibold text-sm">
+                This auction has been closed by negotiation.
+              </p>
+              <p className="text-sm text-amber-700 mt-1">
+                Final negotiated amount: Rs. {product.offerPrice}
+              </p>
+            </div>
+          )}
+
           {/* Winner banner (after ended) */}
-          {ended && product.winnerId && (
+          {ended && !closedByNegotiationState && endedWithWinner && (
             <div className="bg-green-50 border border-green-200 p-3 rounded-lg mt-4">
               <p className="text-green-700 font-semibold text-sm">
                 Winner selected — final bid Rs. {product.offerPrice}
               </p>
             </div>
           )}
-          {ended && !product.winnerId && (
+          {ended && !closedByNegotiationState && endedWithNoBids && (
             <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg mt-4">
               <p className="text-gray-600 text-sm">
                 Auction ended with no bids.

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import API from "../../api/axios";
+import { getEndedAuctionState } from "../../utils/auctionState";
 
 const SellerDashboard = () => {
   const [products, setProducts] = useState([]);
@@ -47,9 +48,10 @@ const SellerDashboard = () => {
   const unreadNotifications = notifications.filter((n) => !n.isRead);
 
   const productsReadyForAuction = products.filter((p) => {
+    const { hasAcceptedBids } = getEndedAuctionState(p);
     if (!p.isAuction) return true;
     if (p.auctionStatus === "active") return false;
-    if (p.winnerId) return false;
+    if (hasAcceptedBids) return false;
     if (hasCompletedPickup(p._id)) return false;
     return true;
   });
@@ -57,10 +59,11 @@ const SellerDashboard = () => {
   const pendingPickups = pickups.filter((p) => p.status === "pending");
 
   const getEndedStatus = (product) => {
+    const { hasAcceptedBids } = getEndedAuctionState(product);
     if (hasCompletedPickup(product._id)) {
       return { text: "Pickup Completed", color: "bg-purple-100 text-purple-700" };
     }
-    if (product.winnerId) {
+    if (hasAcceptedBids) {
       return { text: "Winner Selected", color: "bg-amber-100 text-amber-700" };
     }
     return { text: "Ended (No Bids)", color: "bg-gray-100 text-gray-700" };
@@ -135,7 +138,7 @@ const SellerDashboard = () => {
 
       <div className="mb-10">
         <h2 className="text-xl font-semibold mb-4">Quick Links</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <Link to="/seller/add-product" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
             <p className="text-2xl mb-2">➕</p>
             <p className="text-sm font-medium text-gray-700">Add Product</p>
@@ -147,6 +150,10 @@ const SellerDashboard = () => {
           <Link to="/seller/auctions" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
             <p className="text-2xl mb-2">📈</p>
             <p className="text-sm font-medium text-gray-700">My Auctions</p>
+          </Link>
+          <Link to="/seller/negotiations" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
+            <p className="text-2xl mb-2">💬</p>
+            <p className="text-sm font-medium text-gray-700">Negotiations</p>
           </Link>
           <Link to="/seller/notifications" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center relative">
             <p className="text-2xl mb-2">🔔</p>

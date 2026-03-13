@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import API from "../../api/axios";
+import { getEndedAuctionState } from "../../utils/auctionState";
 
 const MyProducts = () => {
   const [products, setProducts] = useState([]);
@@ -36,10 +37,11 @@ const MyProducts = () => {
 
   // Determine auction status label
   const getAuctionLabel = (p) => {
+    const { hasAcceptedBids } = getEndedAuctionState(p);
     if (!p.isAuction) return { text: "No auction", color: "bg-blue-100 text-blue-700" };
     if (p.auctionStatus === "active") return { text: "Active", color: "bg-green-100 text-green-700" };
     if (hasCompletedPickup(p._id)) return { text: "Pickup Completed", color: "bg-purple-100 text-purple-700" };
-    if (p.winnerId) return { text: "Ended (Winner Selected)", color: "bg-amber-100 text-amber-700" };
+    if (hasAcceptedBids) return { text: "Ended (Winner Selected)", color: "bg-amber-100 text-amber-700" };
     return { text: "Ended (No Bids)", color: "bg-gray-100 text-gray-600" };
   };
 
@@ -47,7 +49,7 @@ const MyProducts = () => {
   const canRestart = (p) =>
     p.isAuction &&
     p.auctionStatus === "ended" &&
-    !p.winnerId &&
+    !getEndedAuctionState(p).hasAcceptedBids &&
     !hasCompletedPickup(p._id);
 
   // Start only if: never auctioned

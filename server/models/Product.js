@@ -12,10 +12,11 @@ const productSchema = new mongoose.Schema(
 
     // Auction fields
     isAuction: { type: Boolean, default: false },           // true if auction started
-    auctionStatus: { type: String, enum: ["active", "ended"], default: "active" },
+    auctionStatus: { type: String, enum: ["active", "ended", "closed_by_negotiation"], default: "active" },
     startingBid: { type: Number },                          // minimum allowed first bid
     auctionEndTime: { type: Date },                         // when auction ends
-    auctionStartedAt: { type: Date },                        // when current round started
+    auctionStartedAt: { type: Date },                       // when current round started
+    closedByNegotiationAt: { type: Date, default: null },
     highestBidderId: { type: mongoose.Schema.Types.ObjectId, ref: "user" }, // current highest bidder
     winnerId: { type: mongoose.Schema.Types.ObjectId, ref: "user" }         // winner after auction ends
   },

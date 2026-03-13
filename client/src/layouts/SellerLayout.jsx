@@ -20,6 +20,7 @@ const SellerLayout = () => {
             <Link to="/seller/add-product" className="text-gray-700 hover:text-indigo-600">Add Product</Link>
             <Link to="/seller/products" className="text-gray-700 hover:text-indigo-600">My Products</Link>
             <Link to="/seller/auctions" className="text-gray-700 hover:text-indigo-600">Auctions</Link>
+            <Link to="/seller/negotiations" className="text-gray-700 hover:text-indigo-600">Negotiations</Link>
             <Link to="/seller/pickups" className="text-gray-700 hover:text-indigo-600">Pickups</Link>
             <Link to="/seller/notifications" className="text-gray-700 hover:text-indigo-600">Notifications</Link>
             <Link to="/seller/profile" className="text-gray-700 hover:text-indigo-600">Profile</Link>

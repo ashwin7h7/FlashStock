@@ -24,6 +24,8 @@ import WonAuctionDetails from "../pages/buyer/WonAuctionDetails";
 import BuyerNotifications from "../pages/buyer/BuyerNotifications";
 import BuyerProfile from "../pages/buyer/BuyerProfile";
 import MyPickups from "../pages/buyer/MyPickups";
+import BuyerNegotiations from "../pages/buyer/BuyerNegotiations";
+import BuyerNegotiationChat from "../pages/buyer/BuyerNegotiationChat";
 
 // Seller pages
 import SellerDashboard from "../pages/seller/SellerDashboard";
@@ -34,6 +36,8 @@ import SellerNotifications from "../pages/seller/SellerNotifications";
 import SellerProfile from "../pages/seller/SellerProfile";
 import SellerPickups from "../pages/seller/SellerPickups";
 import SellerAuctionMonitor from "../pages/seller/SellerAuctionMonitor";
+import SellerNegotiations from "../pages/seller/SellerNegotiations";
+import SellerNegotiationChat from "../pages/seller/SellerNegotiationChat";
 
 const AppRoutes = () => {
   return (
@@ -56,6 +60,8 @@ const AppRoutes = () => {
           <Route path="/buyer/won" element={<WonAuctions />} />
           <Route path="/buyer/won/:id" element={<WonAuctionDetails />} />
           <Route path="/buyer/pickups" element={<MyPickups />} />
+          <Route path="/buyer/negotiations" element={<BuyerNegotiations />} />
+          <Route path="/buyer/negotiations/:id" element={<BuyerNegotiationChat />} />
           <Route path="/buyer/notifications" element={<BuyerNotifications />} />
           <Route path="/buyer/profile" element={<BuyerProfile />} />
         </Route>
@@ -69,6 +75,8 @@ const AppRoutes = () => {
           <Route path="/seller/products" element={<MyProducts />} />
           <Route path="/seller/auctions" element={<MyAuctions />} />
           <Route path="/seller/auctions/:id" element={<SellerAuctionMonitor />} />
+          <Route path="/seller/negotiations" element={<SellerNegotiations />} />
+          <Route path="/seller/negotiations/:id" element={<SellerNegotiationChat />} />
           <Route path="/seller/pickups" element={<SellerPickups />} />
           <Route path="/seller/notifications" element={<SellerNotifications />} />
           <Route path="/seller/profile" element={<SellerProfile />} />
