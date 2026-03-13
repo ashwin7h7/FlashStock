@@ -76,11 +76,16 @@ export const startAuction = async (req, res) => {
 // http://localhost:4000/api/auction/active
 export const getActiveAuctions = async (req, res) => {
   try {
-    const auctions = await Product.find({
+    const { location } = req.query;
+    const filter = {
       isAuction: true,
       auctionStatus: "active",
-      auctionEndTime: { $gt: new Date() }
-    });
+      auctionEndTime: { $gt: new Date() },
+    };
+    if (location && location.toLowerCase() !== "all") {
+      filter.location = location;
+    }
+    const auctions = await Product.find(filter);
 
     res.json({
       success: true,

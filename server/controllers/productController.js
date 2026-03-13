@@ -16,8 +16,8 @@ export const addProduct = async (req, res) => {
     const productData = JSON.parse(req.body.productData);
 
     // Validate required fields
-    const { name, description, price, category, offerPrice } = productData;
-    if (!name || !description || !price || !category) {
+    const { name, description, price, category, offerPrice, location } = productData;
+    if (!name || !description || !price || !category || !location) {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 

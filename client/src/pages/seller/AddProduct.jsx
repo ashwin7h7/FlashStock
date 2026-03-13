@@ -2,8 +2,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 
+const SRI_LANKA_DISTRICTS = [
+  "Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo",
+  "Galle", "Gampaha", "Hambantota", "Jaffna", "Kalutara",
+  "Kandy", "Kegalle", "Kilinochchi", "Kurunegala", "Mannar",
+  "Matale", "Matara", "Monaragala", "Mullaitivu", "Nuwara Eliya",
+  "Polonnaruwa", "Puttalam", "Ratnapura", "Trincomalee", "Vavuniya",
+];
+
 const AddProduct = () => {
-  const [form, setForm] = useState({ name: "", description: "", price: "", offerPrice: "", category: "" });
+  const [form, setForm] = useState({ name: "", description: "", price: "", offerPrice: "", category: "", location: "" });
   const [images, setImages] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -36,6 +44,7 @@ const AddProduct = () => {
         price: Number(form.price),
         offerPrice: Number(form.offerPrice || form.price),
         category: form.category,
+        location: form.location,
       };
 
       const formData = new FormData();
@@ -45,7 +54,7 @@ const AddProduct = () => {
       const { data } = await API.post("/product/add", formData);
       if (data.success) {
         setSuccess("Product added successfully!");
-        setForm({ name: "", description: "", price: "", offerPrice: "", category: "" });
+        setForm({ name: "", description: "", price: "", offerPrice: "", category: "", location: "" });
         setImages([]);
         setTimeout(() => navigate("/seller/products"), 1500);
       } else {
@@ -90,6 +99,16 @@ const AddProduct = () => {
           <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
           <input name="category" type="text" required value={form.category} onChange={handleChange}
             className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Location (District)</label>
+          <select name="location" required value={form.location} onChange={handleChange}
+            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">Select a district</option>
+            {SRI_LANKA_DISTRICTS.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
         </div>
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-1">Images (up to 5)</label>

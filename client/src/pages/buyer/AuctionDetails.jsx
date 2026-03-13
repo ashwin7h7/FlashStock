@@ -349,6 +349,9 @@ const AuctionDetails = () => {
           )}
           <h1 className="text-2xl font-bold mb-1">{product.name}</h1>
           <p className="text-sm text-gray-400 mb-3">Category: {product.category}</p>
+          {product.location && (
+            <p className="text-sm text-gray-400 mb-3">📍 Seller Location: {product.location} &mdash; Pickup Area: {product.location}</p>
+          )}
           <p className="text-gray-600 mb-4">{product.description}</p>
 
           <div className="grid grid-cols-2 gap-3 mb-4">

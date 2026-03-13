@@ -182,6 +182,10 @@ const WonAuctionDetails = () => {
               <p className="text-lg font-semibold">{seller?.name || "Seller"}</p>
               {seller?.email && <p className="text-sm text-gray-500 mt-1">{seller.email}</p>}
             </div>
+            <div className="bg-indigo-50 p-4 rounded-lg">
+              <p className="text-xs text-gray-500">Pickup Location</p>
+              <p className="text-lg font-semibold">{product.location || "—"}</p>
+            </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">

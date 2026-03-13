@@ -76,6 +76,10 @@ const WonAuctions = () => {
                 <h3 className="font-semibold text-lg">{product?.name || "Product"}</h3>
                 <p className="text-sm text-gray-500 mt-1 line-clamp-2">{product?.description || "No description available."}</p>
 
+                {product?.location && (
+                  <p className="text-xs text-indigo-600 mt-1.5">📍 Pickup Location: {product.location}</p>
+                )}
+
                 <div className="mt-3 bg-indigo-50 p-3 rounded-lg">
                   <p className="text-xs text-gray-500">Winning Amount</p>
                   <p className="text-xl font-bold text-indigo-600">Rs. {order.price}</p>

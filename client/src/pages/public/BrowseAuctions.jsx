@@ -18,6 +18,15 @@ const SORT_OPTIONS = [
   { value: "recently-added", label: "Recently Added" },
 ];
 
+const LOCATION_OPTIONS = [
+  "all",
+  "Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo",
+  "Galle", "Gampaha", "Hambantota", "Jaffna", "Kalutara",
+  "Kandy", "Kegalle", "Kilinochchi", "Kurunegala", "Mannar",
+  "Matale", "Matara", "Monaragala", "Mullaitivu", "Nuwara Eliya",
+  "Polonnaruwa", "Puttalam", "Ratnapura", "Trincomalee", "Vavuniya",
+];
+
 const isLiveAuction = (auction, nowTs = Date.now()) => {
   if (!auction?.isAuction) return false;
   if (auction.auctionStatus !== "active") return false;
@@ -32,6 +41,7 @@ const BrowseAuctions = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState("ending-soon");
+  const [location, setLocation] = useState("all");
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -80,12 +90,14 @@ const BrowseAuctions = () => {
 
       const itemCategory = (item.category || "").toLowerCase();
       const matchesCategory = category === "all" || itemCategory === category;
+      const itemLocation = (item.location || "").toLowerCase();
+      const matchesLocation = location === "all" || itemLocation === location.toLowerCase();
       const matchesSearch =
         query.length === 0 ||
         (item.name || "").toLowerCase().includes(query) ||
         (item.description || "").toLowerCase().includes(query);
 
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesLocation && matchesSearch;
     });
 
     const sorted = [...filtered];
@@ -98,7 +110,7 @@ const BrowseAuctions = () => {
     }
 
     return sorted;
-  }, [auctions, now, search, category, sortBy]);
+  }, [auctions, now, search, category, location, sortBy]);
 
   if (loading) return <div className="text-center py-20">Loading auctions...</div>;
 
@@ -117,7 +129,7 @@ const BrowseAuctions = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="bg-white rounded-xl shadow p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
           <label className="text-xs font-medium text-gray-500">Search</label>
           <input
@@ -138,6 +150,21 @@ const BrowseAuctions = () => {
             {CATEGORY_OPTIONS.map((c) => (
               <option key={c} value={c}>
                 {c === "all" ? "All Categories" : c.charAt(0).toUpperCase() + c.slice(1)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-gray-500">Location</label>
+          <select
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {LOCATION_OPTIONS.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc === "all" ? "All Locations" : loc}
               </option>
             ))}
           </select>
@@ -186,6 +213,10 @@ const BrowseAuctions = () => {
 
                 <h3 className="font-semibold text-lg line-clamp-1">{item.name}</h3>
                 <p className="text-gray-500 text-sm mt-1 line-clamp-2">{item.description || "No description"}</p>
+
+                {item.location && (
+                  <p className="text-xs text-gray-500 mt-1.5">📍 {item.location}</p>
+                )}
 
                 <div className="grid grid-cols-2 gap-2 mt-3">
                   <div className="bg-gray-50 rounded p-2">

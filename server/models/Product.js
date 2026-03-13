@@ -8,6 +8,7 @@ const productSchema = new mongoose.Schema(
     offerPrice: { type: Number, required: true },
     image: { type: Array, required: true },      
     category: { type: String, required: true },
+    location: { type: String, required: true },
     sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
 
     // Auction fields
