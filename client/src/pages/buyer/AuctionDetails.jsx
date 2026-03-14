@@ -348,345 +348,355 @@ const AuctionDetails = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-10">
       {/* ── Product info ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-7 lg:grid-cols-12 lg:gap-8 xl:gap-10">
         {/* Image gallery */}
-        <div>
-          <img
-            src={product.image?.[selectedImg] || product.image?.[0] || "/placeholder.png"}
-            alt={product.name}
-            className="w-full rounded-xl shadow-lg cursor-pointer hover:opacity-90 transition"
-            onClick={() => setLightboxOpen(true)}
-          />
-          {product.image?.length > 1 && (
-            <div className="flex gap-2 mt-3">
-              {product.image.map((img, i) => (
-                <img
-                  key={i}
-                  src={img}
-                  alt={`${product.name} ${i + 1}`}
-                  className={`w-16 h-16 rounded object-cover border-2 cursor-pointer transition ${
-                    i === selectedImg ? "border-indigo-500 ring-2 ring-indigo-300" : "border-gray-200 hover:border-gray-400"
-                  }`}
-                  onClick={() => setSelectedImg(i)}
-                />
-              ))}
+        <div className="space-y-6 lg:col-span-5">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_34px_rgba(15,23,42,0.08)] sm:p-4">
+            <div
+              className="flex h-[18rem] w-full cursor-pointer items-center justify-center rounded-xl bg-slate-50 shadow-sm sm:h-[22rem]"
+              onClick={() => setLightboxOpen(true)}
+            >
+              <img
+                src={product.image?.[selectedImg] || product.image?.[0] || "/placeholder.png"}
+                alt={product.name}
+                className="max-h-full max-w-full rounded-xl object-contain transition duration-300 hover:opacity-95"
+              />
             </div>
-          )}
+            {product.image?.length > 1 && (
+              <div className="mt-4 grid grid-cols-5 gap-2.5 sm:gap-3">
+                {product.image.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt={`${product.name} ${i + 1}`}
+                    className={`h-14 w-full rounded-lg border-2 object-cover transition duration-200 sm:h-16 ${
+                      i === selectedImg
+                        ? "border-indigo-500 ring-2 ring-indigo-200"
+                        : "border-slate-200 hover:-translate-y-0.5 hover:border-slate-300"
+                    }`}
+                    onClick={() => setSelectedImg(i)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* ── Seller Info Card ── */}
           {sellerInfo && (
-            <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-4 shadow-sm mt-5">
-              {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-200">
-                {sellerInfo.profileImage ? (
-                  <img
-                    src={sellerInfo.profileImage}
-                    alt={sellerInfo.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500 text-lg font-bold select-none">
-                    {sellerInfo.name?.[0]?.toUpperCase() || "S"}
-                  </span>
-                )}
-              </div>
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-0.5">Seller</p>
-                <p className="font-semibold text-gray-800 truncate">{sellerInfo.name}</p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                  {sellerRating && sellerRating.totalReviews > 0 ? (
-                    <span className="text-sm text-gray-600">
-                      ⭐ {sellerRating.avgRating.toFixed(1)}
-                      <span className="text-gray-400 ml-1">({sellerRating.totalReviews} review{sellerRating.totalReviews !== 1 ? "s" : ""})</span>
-                    </span>
+            <div className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(15,23,42,0.1)] sm:p-5">
+              <div className="flex items-center gap-3.5 sm:gap-4">
+                {/* Avatar */}
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 shadow-sm sm:h-14 sm:w-14">
+                  {sellerInfo.profileImage ? (
+                    <img
+                      src={sellerInfo.profileImage}
+                      alt={sellerInfo.name}
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
-                    <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                      New Seller
+                    <span className="select-none text-lg font-bold text-slate-500 sm:text-xl">
+                      {sellerInfo.name?.[0]?.toUpperCase() || "S"}
                     </span>
                   )}
-                  {sellerInfo.location && (
-                    <span className="text-sm text-gray-500">📍 {sellerInfo.location}</span>
-                  )}
+                </div>
+                {/* Info */}
+                <div className="min-w-0 flex-1">
+                  <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Seller</p>
+                  <p className="truncate text-base font-semibold text-slate-800 sm:text-lg">{sellerInfo.name}</p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    {sellerRating && sellerRating.totalReviews > 0 ? (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-sm font-medium text-amber-700">
+                        ⭐ {sellerRating.avgRating.toFixed(1)}
+                        <span className="ml-1 text-amber-600/80">({sellerRating.totalReviews} review{sellerRating.totalReviews !== 1 ? "s" : ""})</span>
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-600">
+                        New Seller
+                      </span>
+                    )}
+                    {sellerInfo.location && (
+                      <span className="text-sm text-slate-500">📍 {sellerInfo.location}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
           {/* ── Bid History ── */}
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold mb-4">
-              Bid History ({bids.length} bid{bids.length !== 1 ? "s" : ""})
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.07)] sm:p-5">
+            <h2 className="mb-4 text-lg font-semibold text-slate-800 sm:text-xl">
+              Bid History
+              <span className="ml-2 text-sm font-medium text-slate-500">({bids.length} bid{bids.length !== 1 ? "s" : ""})</span>
             </h2>
             {bids.length === 0 ? (
-              <p className="text-gray-500">No bids yet. Be the first!</p>
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-7 text-center">
+                <p className="text-sm text-slate-500">No bids yet. Be the first bidder on this item.</p>
+              </div>
             ) : (
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-sm font-medium text-gray-600">#</th>
-                      <th className="px-4 py-3 text-sm font-medium text-gray-600">
-                        Bidder
-                      </th>
-                      <th className="px-4 py-3 text-sm font-medium text-gray-600">
-                        Amount
-                      </th>
-                      <th className="px-4 py-3 text-sm font-medium text-gray-600">
-                        Time
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bids.map((bid, i) => {
-                      const diff = now - new Date(bid.createdAt).getTime();
-                      const secs = Math.floor(diff / 1000);
-                      const timeAgo =
-                        secs < 60 ? "Just now"
-                        : secs < 3600 ? `${Math.floor(secs / 60)}m ago`
-                        : secs < 86400 ? `${Math.floor(secs / 3600)}h ago`
-                        : new Date(bid.createdAt).toLocaleDateString();
+              <div className="overflow-hidden rounded-xl border border-slate-200">
+                <div className="max-h-[22rem] overflow-auto">
+                  <table className="w-full text-left">
+                    <thead className="sticky top-0 bg-slate-50/95 backdrop-blur">
+                      <tr>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">#</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Bidder</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Amount</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Time</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {bids.map((bid, i) => {
+                        const diff = now - new Date(bid.createdAt).getTime();
+                        const secs = Math.floor(diff / 1000);
+                        const timeAgo =
+                          secs < 60 ? "Just now"
+                          : secs < 3600 ? `${Math.floor(secs / 60)}m ago`
+                          : secs < 86400 ? `${Math.floor(secs / 3600)}h ago`
+                          : new Date(bid.createdAt).toLocaleDateString();
 
-                      return (
-                        <tr
-                          key={i}
-                          className={`border-t ${i === 0 ? "bg-indigo-50" : ""}`}
-                        >
-                          <td className="px-4 py-3 text-sm text-gray-400">{bids.length - i}</td>
-                          <td className="px-4 py-3 text-sm">
-                            {bid.bidderId?._id === user?._id ? (
-                              <span className="font-semibold text-indigo-600">You</span>
-                            ) : (
-                              bid.bidderId?.name || "Anonymous"
-                            )}
-                          </td>
-                          <td className="px-4 py-3 font-semibold">
-                            Rs. {bid.amount}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500" title={new Date(bid.createdAt).toLocaleString()}>
-                            {timeAgo}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                        return (
+                          <tr
+                            key={i}
+                            className={`transition-colors hover:bg-slate-50 ${i === 0 ? "bg-indigo-50/70" : "bg-white"}`}
+                          >
+                            <td className="px-4 py-3 text-sm text-slate-400">{bids.length - i}</td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {bid.bidderId?._id === user?._id ? (
+                                <span className="font-semibold text-indigo-600">You</span>
+                              ) : (
+                                bid.bidderId?.name || "Anonymous"
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-semibold text-slate-800">Rs. {bid.amount}</td>
+                            <td className="px-4 py-3 text-sm text-slate-500" title={new Date(bid.createdAt).toLocaleString()}>
+                              {timeAgo}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
         </div>
 
         {/* Details + bid form */}
-        <div>
+        <div className="space-y-5 lg:col-span-7">
           {pageError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
               {pageError}
             </div>
           )}
-          <h1 className="text-2xl font-bold mb-1">{product.name}</h1>
-          <p className="text-sm text-gray-400 mb-3">Category: {product.category}</p>
-          {product.location && (
-            <p className="text-sm text-gray-400 mb-3">📍 Seller Location: {product.location} &mdash; Pickup Area: {product.location}</p>
-          )}
-          <p className="text-gray-600 mb-4">{product.description}</p>
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="text-xs text-gray-500">Original Price</p>
-              <p className="text-lg font-semibold">Rs. {product.price}</p>
-            </div>
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="text-xs text-gray-500">Starting Bid</p>
-              <p className="text-lg font-semibold">
-                Rs. {product.startingBid ?? "—"}
-              </p>
-            </div>
-          </div>
-
-          {/* Current highest bid */}
-          <div className="bg-indigo-50 p-4 rounded-lg mb-4">
-            <p className="text-sm text-gray-500">
-              {bids.length === 0 && !ended ? "Starting Bid" : "Current Highest Bid"}
-            </p>
-            <p className="text-3xl font-bold text-indigo-600">
-              Rs. {product.offerPrice}
-            </p>
-          </div>
-
-          {/* Status badge + countdown */}
-          <div className="flex items-center gap-3 mb-4">
-            {closedByNegotiationState ? (
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
-                Closed by Negotiation
-              </span>
-            ) : ended ? (
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
-                Auction Ended
-              </span>
-            ) : (
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
-                Live Auction
-              </span>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.08)] sm:p-6">
+            <h1 className="text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">{product.name}</h1>
+            <p className="mt-2 text-sm font-medium text-slate-500">Category: {product.category}</p>
+            {product.location && (
+              <p className="mt-2 text-sm text-slate-500">📍 Seller Location: {product.location} &mdash; Pickup Area: {product.location}</p>
             )}
-            {!ended && timeLeft && (
-              <span className="text-sm font-mono text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                {timeLeft}
-              </span>
-            )}
-          </div>
+            <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">{product.description}</p>
 
-          <p className="text-xs text-gray-400 mb-4">
-            {closedByNegotiationState ? "Closed" : ended ? "Ended" : "Ends"}:{" "}
-            {new Date(product.auctionEndTime).toLocaleString()}
-          </p>
-
-          {closedByNegotiationState && (
-            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg mb-4">
-              <p className="text-amber-800 font-semibold">
-                This auction has been closed by negotiation.
-              </p>
-              <p className="text-sm text-amber-700 mt-1">
-                Final negotiated amount: Rs. {product.offerPrice}
-              </p>
-            </div>
-          )}
-
-          {/* Winner banner */}
-          {ended && !closedByNegotiationState && endedWithWinner && isUserWinner && (
-            <div className="bg-green-50 border border-green-200 p-3 rounded-lg mb-4">
-              <p className="text-green-700 font-semibold">
-                You won this auction!
-              </p>
-            </div>
-          )}
-
-          {ended && !closedByNegotiationState && endedWithWinner && !isUserWinner && (
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
-              <p className="text-blue-700 font-semibold">
-                Auction ended. Winning bid: Rs. {product.offerPrice}
-              </p>
-            </div>
-          )}
-
-          {ended && !closedByNegotiationState && endedWithNoBids && (
-            <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg mb-4">
-              <p className="text-gray-600 text-sm">Auction ended with no bids.</p>
-            </div>
-          )}
-
-          {/* Order / Pickup status — only for the winner */}
-          {orderInfo && (
-            <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg mb-4 space-y-2">
-              <h3 className="font-semibold text-sm text-gray-700">Order &amp; Pickup</h3>
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-gray-500">Order Status:</span>
-                <span className="font-medium capitalize">{orderInfo.status}</span>
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Original Price</p>
+                <p className="mt-1 text-lg font-semibold text-slate-800">Rs. {product.price}</p>
               </div>
-              {orderInfo.pickup ? (
-                <>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="text-gray-500">Pickup Status:</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      orderInfo.pickup.pickupStatus === "completed"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}>
-                      {orderInfo.pickup.pickupStatus === "completed" ? "Completed" : "Pending"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                    <span>Seller confirmed: {orderInfo.pickup.sellerConfirmed ? "Yes" : "No"}</span>
-                    <span>You confirmed: {orderInfo.pickup.buyerConfirmed ? "Yes" : "No"}</span>
-                  </div>
-                </>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Starting Bid</p>
+                <p className="mt-1 text-lg font-semibold text-slate-800">Rs. {product.startingBid ?? "—"}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-indigo-100 bg-gradient-to-b from-white to-indigo-50/50 p-5 shadow-[0_16px_34px_rgba(79,70,229,0.14)] sm:p-6">
+            {/* Current highest bid */}
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4 sm:p-5">
+              <p className="text-sm font-medium text-slate-500">
+                {bids.length === 0 && !ended ? "Starting Bid" : "Current Highest Bid"}
+              </p>
+              <p className="mt-1 text-3xl font-bold text-indigo-600 sm:text-4xl">Rs. {product.offerPrice}</p>
+            </div>
+
+            {/* Status badge + countdown */}
+            <div className="mt-4 flex flex-wrap items-center gap-2.5 sm:gap-3">
+              {closedByNegotiationState ? (
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
+                  Closed by Negotiation
+                </span>
+              ) : ended ? (
+                <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700">
+                  Auction Ended
+                </span>
               ) : (
-                <p className="text-xs text-gray-400">Pickup info not yet available.</p>
+                <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+                  Live Auction
+                </span>
+              )}
+              {!ended && timeLeft && (
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-mono text-slate-600">
+                  {timeLeft}
+                </span>
               )}
             </div>
-          )}
 
-          {/* Message area */}
-          {message.text && (
-            <div
-              className={`p-3 rounded-lg mb-4 text-sm ${
-                message.error
-                  ? "bg-red-50 text-red-700 border border-red-200"
-                  : "bg-green-50 text-green-700 border border-green-200"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
+            <p className="mt-3 text-xs text-slate-500">
+              {closedByNegotiationState ? "Closed" : ended ? "Ended" : "Ends"}:{" "}
+              {new Date(product.auctionEndTime).toLocaleString()}
+            </p>
 
-          {/* Bid form — only for logged-in non-seller while auction is live */}
-          {!ended && user && !isProductSeller && (
-            <form onSubmit={handleBid} className="flex flex-col gap-2">
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder={`Min bid: Rs. ${(Number(product.offerPrice) || 0) + 1}`}
-                value={bidAmount}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (v === "" || /^\d+$/.test(v)) setBidAmount(v);
-                }}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                required
-              />
-              {/* Quick increment buttons */}
-              <div className="flex gap-2">
-                {[{ label: "+1K", value: 1000 }, { label: "+5K", value: 5000 }, { label: "+10K", value: 10000 }].map(({ label, value }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => handleIncrement(value)}
-                    className="flex-1 border border-indigo-300 text-indigo-600 text-sm font-medium py-1.5 rounded-lg hover:bg-indigo-50 active:bg-indigo-100 transition-colors"
-                  >
-                    {label}
-                  </button>
-                ))}
+            {closedByNegotiationState && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+                <p className="font-semibold text-amber-800">
+                  This auction has been closed by negotiation.
+                </p>
+                <p className="mt-1 text-sm text-amber-700">
+                  Final negotiated amount: Rs. {product.offerPrice}
+                </p>
               </div>
-              <button
-                type="submit"
-                disabled={placingBid}
-                className="w-full bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 font-medium"
+            )}
+
+            {/* Winner banner */}
+            {ended && !closedByNegotiationState && endedWithWinner && isUserWinner && (
+              <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3.5">
+                <p className="font-semibold text-green-700">
+                  You won this auction!
+                </p>
+              </div>
+            )}
+
+            {ended && !closedByNegotiationState && endedWithWinner && !isUserWinner && (
+              <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3.5">
+                <p className="font-semibold text-blue-700">
+                  Auction ended. Winning bid: Rs. {product.offerPrice}
+                </p>
+              </div>
+            )}
+
+            {ended && !closedByNegotiationState && endedWithNoBids && (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+                <p className="text-sm text-slate-600">Auction ended with no bids.</p>
+              </div>
+            )}
+
+            {/* Order / Pickup status — only for the winner */}
+            {orderInfo && (
+              <div className="mt-4 space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-slate-700">Order &amp; Pickup</h3>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-slate-500">Order Status:</span>
+                  <span className="font-medium capitalize">{orderInfo.status}</span>
+                </div>
+                {orderInfo.pickup ? (
+                  <>
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-slate-500">Pickup Status:</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        orderInfo.pickup.pickupStatus === "completed"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}>
+                        {orderInfo.pickup.pickupStatus === "completed" ? "Completed" : "Pending"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                      <span>Seller confirmed: {orderInfo.pickup.sellerConfirmed ? "Yes" : "No"}</span>
+                      <span>You confirmed: {orderInfo.pickup.buyerConfirmed ? "Yes" : "No"}</span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-400">Pickup info not yet available.</p>
+                )}
+              </div>
+            )}
+
+            {/* Message area */}
+            {message.text && (
+              <div
+                className={`mt-4 rounded-xl border p-3 text-sm ${
+                  message.error
+                    ? "border-red-200 bg-red-50 text-red-700"
+                    : "border-green-200 bg-green-50 text-green-700"
+                }`}
               >
-                {placingBid ? "Placing..." : "Place Bid"}
-              </button>
-            </form>
-          )}
+                {message.text}
+              </div>
+            )}
 
-          {canNegotiate && (
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={handleStartNegotiation}
-                disabled={startingNegotiation}
-                className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-60"
-              >
-                {startingNegotiation ? "Opening..." : "Make Offer"}
-              </button>
-            </div>
-          )}
+            {/* Bid form — only for logged-in non-seller while auction is live */}
+            {!ended && user && !isProductSeller && (
+              <form onSubmit={handleBid} className="mt-4 flex flex-col gap-3">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder={`Min bid: Rs. ${(Number(product.offerPrice) || 0) + 1}`}
+                  value={bidAmount}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "" || /^\d+$/.test(v)) setBidAmount(v);
+                  }}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 shadow-sm transition duration-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
 
-          {/* Seller cannot bid */}
-          {isProductSeller && !ended && (
-            <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
-              You cannot bid on your own auction.
-            </p>
-          )}
+                {/* Quick increment buttons */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[{ label: "+1K", value: 1000 }, { label: "+5K", value: 5000 }, { label: "+10K", value: 10000 }].map(({ label, value }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => handleIncrement(value)}
+                      className="rounded-lg border border-indigo-300 bg-white py-2 text-sm font-semibold text-indigo-600 transition duration-200 hover:-translate-y-0.5 hover:bg-indigo-50 active:bg-indigo-100"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
 
-          {/* Not logged in */}
-          {!user && !ended && (
-            <p className="text-sm text-gray-500">
-              <a href="/login" className="text-indigo-600 underline">
-                Log in
-              </a>{" "}
-              to place a bid.
-            </p>
-          )}
+                <button
+                  type="submit"
+                  disabled={placingBid}
+                  className="w-full rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white shadow-[0_8px_20px_rgba(79,70,229,0.26)] transition duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {placingBid ? "Placing..." : "Place Bid"}
+                </button>
+              </form>
+            )}
+
+            {canNegotiate && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={handleStartNegotiation}
+                  disabled={startingNegotiation}
+                  className="w-full rounded-xl border border-indigo-300 bg-white px-6 py-3 font-semibold text-indigo-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-indigo-400 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {startingNegotiation ? "Opening..." : "Make Offer"}
+                </button>
+              </div>
+            )}
+
+            {/* Seller cannot bid */}
+            {isProductSeller && !ended && (
+              <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-600">
+                You cannot bid on your own auction.
+              </p>
+            )}
+
+            {/* Not logged in */}
+            {!user && !ended && (
+              <p className="mt-4 text-sm text-slate-500">
+                <a href="/login" className="font-medium text-indigo-600 underline">
+                  Log in
+                </a>{" "}
+                to place a bid.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
