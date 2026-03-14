@@ -6,9 +6,9 @@ import authUser from "../middlewares/authUser.js";
 const router = express.Router();
 
 router.post("/start", authSeller, startAuction);
-router.get("/active", authUser, getActiveAuctions);
+router.get("/active", getActiveAuctions);
 router.get("/ended", authUser, getEndedAuctions);
 router.get("/my-bids", authUser, getMyBids);
-router.get("/:productId/bids", authUser, getBidHistory);
+router.get("/:productId/bids", getBidHistory);
 
 export default router;
