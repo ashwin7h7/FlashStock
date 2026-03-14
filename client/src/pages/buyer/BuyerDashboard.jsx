@@ -57,9 +57,9 @@ const BuyerDashboard = () => {
     {
       label: "Active Bids",
       value: activeBids.length,
-      note: "Auctions you are currently tracking",
+      note: "Auctions that you are currently participating in.",
       tone: "dashboard-card-primary",
-      kicker: "Live activity",
+      kicker: "Active",
       icon: (
         <DashboardGlyph>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -74,7 +74,7 @@ const BuyerDashboard = () => {
     {
       label: "Won Auctions",
       value: orders.length,
-      note: "Closed deals already assigned to you",
+      note: "Auctions won by your account.",
       tone: "dashboard-card-success",
       kicker: "Completed",
       icon: (
@@ -93,9 +93,9 @@ const BuyerDashboard = () => {
     {
       label: "Unread Notifications",
       value: unreadNotifications.length,
-      note: "New seller updates and auction alerts",
+      note: "Notifications and updates that require your attention.",
       tone: unreadNotifications.length > 0 ? "dashboard-card-warning" : "dashboard-card-neutral",
-      kicker: "Attention",
+      kicker: "Alerts",
       icon: (
         <DashboardGlyph>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -108,9 +108,9 @@ const BuyerDashboard = () => {
     {
       label: "Browse Auctions",
       value: "Explore",
-      note: "Jump back into the marketplace and place bids",
+      note: "Browse available auctions and participate in bidding.",
       tone: "dashboard-card-primary",
-      kicker: "Shortcut",
+      kicker: "Quick Access",
       icon: (
         <DashboardGlyph>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -132,7 +132,7 @@ const BuyerDashboard = () => {
     {
       to: "/auctions",
       label: "Browse Auctions",
-      detail: "See current lots and live prices",
+      detail: "Browse available auctions and place bids.",
       tone: "dashboard-quick-link-primary",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -146,7 +146,7 @@ const BuyerDashboard = () => {
     {
       to: "/buyer/bids",
       label: "My Bids",
-      detail: "Track auctions where you are competing",
+      detail: "View auctions that you are currently participating in.",
       tone: "dashboard-quick-link-primary",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -160,7 +160,7 @@ const BuyerDashboard = () => {
     {
       to: "/buyer/won",
       label: "Won Auctions",
-      detail: "Review orders and payment outcomes",
+      detail: "View won auctions and order details.",
       tone: "dashboard-quick-link-success",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -174,7 +174,7 @@ const BuyerDashboard = () => {
     {
       to: "/buyer/pickups",
       label: "Pickups",
-      detail: "Check ready items and collection status",
+      detail: "Check pickup progress for won auctions.",
       tone: "dashboard-quick-link-warning",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -188,7 +188,7 @@ const BuyerDashboard = () => {
     {
       to: "/buyer/negotiations",
       label: "Negotiations",
-      detail: "Open pricing discussions with sellers",
+      detail: "Review and manage your negotiation offers.",
       tone: "dashboard-quick-link-primary",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -201,7 +201,7 @@ const BuyerDashboard = () => {
     {
       to: "/buyer/notifications",
       label: "Notifications",
-      detail: "Stay on top of new auction events",
+      detail: "View recent notifications and alerts.",
       tone: unreadNotifications.length > 0 ? "dashboard-quick-link-danger" : "dashboard-quick-link-primary",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -219,7 +219,7 @@ const BuyerDashboard = () => {
         <span className="dashboard-eyebrow">Buyer Panel</span>
         <h1 className="dashboard-title">Buyer Dashboard</h1>
         <p className="dashboard-subtitle">
-          Follow your bids, review won auctions, and move quickly between buyer actions from one clean overview.
+          Overview of your marketplace activity and key statistics.
         </p>
       </div>
 
@@ -242,8 +242,8 @@ const BuyerDashboard = () => {
             </SectionGlyph>
             <div>
               <p className="dashboard-section-kicker">Stats Cards</p>
-              <h2 className="dashboard-section-title">Marketplace snapshot</h2>
-              <p className="dashboard-section-copy">Key buyer metrics with clearer emphasis and more breathing room.</p>
+              <h2 className="dashboard-section-title">Activity Overview</h2>
+              <p className="dashboard-section-copy">Key statistics for your bids, wins, and notifications.</p>
             </div>
           </div>
         </div>
@@ -280,7 +280,7 @@ const BuyerDashboard = () => {
             <div>
               <p className="dashboard-section-kicker">Quick Links</p>
               <h2 className="dashboard-section-title">Common buyer actions</h2>
-              <p className="dashboard-section-copy">Shortcuts styled as dashboard widgets with stronger hover affordance.</p>
+              <p className="dashboard-section-copy">Quick access to buyer tools and pages.</p>
             </div>
           </div>
         </div>
@@ -317,7 +317,7 @@ const BuyerDashboard = () => {
             <div>
               <p className="dashboard-section-kicker">Recent Activity</p>
               <h2 className="dashboard-section-title">Recent Won Auctions</h2>
-              <p className="dashboard-section-copy">A cleaner summary of the latest auctions you have secured.</p>
+              <p className="dashboard-section-copy">Recent auctions won by your account.</p>
             </div>
           </div>
           {orders.length > 5 && (

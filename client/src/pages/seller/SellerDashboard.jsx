@@ -111,7 +111,7 @@ const SellerDashboard = () => {
     {
       label: "Total Products",
       value: products.length,
-      note: "Every product currently listed under your seller account",
+      note: "Total products listed in your account.",
       tone: "dashboard-card-primary",
       kicker: "Inventory",
       icon: (
@@ -128,7 +128,7 @@ const SellerDashboard = () => {
     {
       label: "Active Auctions",
       value: activeAuctions.length,
-      note: "Live seller listings that are accepting bids right now",
+      note: "Auctions currently open for bidding.",
       tone: "dashboard-card-success",
       kicker: "Running",
       icon: (
@@ -145,7 +145,7 @@ const SellerDashboard = () => {
     {
       label: "Ended Auctions",
       value: endedAuctions.length,
-      note: "Finished rounds awaiting review, selection, or fulfillment",
+      note: "Auctions that have already ended.",
       tone: "dashboard-card-neutral",
       kicker: "Completed",
       icon: (
@@ -160,9 +160,9 @@ const SellerDashboard = () => {
     {
       label: "Unread Notifications",
       value: unreadNotifications.length,
-      note: "Bid events, winner updates, and system alerts waiting for review",
+      note: "Notifications and updates that require your attention.",
       tone: unreadNotifications.length > 0 ? "dashboard-card-warning" : "dashboard-card-neutral",
-      kicker: "Attention",
+      kicker: "Alerts",
       icon: (
         <DashboardGlyph>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -175,9 +175,9 @@ const SellerDashboard = () => {
     {
       label: "Ready for Auction",
       value: productsReadyForAuction.length,
-      note: "Products that can be started or restarted without blockers",
+      note: "Products that are ready to start a new auction.",
       tone: "dashboard-card-primary",
-      kicker: "Standby",
+      kicker: "Ready",
       icon: (
         <DashboardGlyph>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -190,9 +190,9 @@ const SellerDashboard = () => {
     {
       label: "Pending Pickups",
       value: pendingPickups.length,
-      note: "Orders waiting for handoff, confirmation, or completion",
+      note: "Pickup requests pending confirmation.",
       tone: pendingPickups.length > 0 ? "dashboard-card-danger" : "dashboard-card-success",
-      kicker: "Fulfillment",
+      kicker: "Pickups",
       icon: (
         <DashboardGlyph>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -210,7 +210,7 @@ const SellerDashboard = () => {
     {
       to: "/seller/add-product",
       label: "Add Product",
-      detail: "Create a new listing and prepare it for auction",
+      detail: "Create a new product listing.",
       tone: "dashboard-quick-link-primary",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -222,7 +222,7 @@ const SellerDashboard = () => {
     {
       to: "/seller/products",
       label: "My Products",
-      detail: "Review inventory details, images, and status",
+      detail: "View and update your product listings.",
       tone: "dashboard-quick-link-primary",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -236,7 +236,7 @@ const SellerDashboard = () => {
     {
       to: "/seller/auctions",
       label: "My Auctions",
-      detail: "Open and monitor active or completed rounds",
+      detail: "Open and manage your auctions.",
       tone: "dashboard-quick-link-success",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -250,7 +250,7 @@ const SellerDashboard = () => {
     {
       to: "/seller/negotiations",
       label: "Negotiations",
-      detail: "Respond to buyer offers and direct pricing chats",
+      detail: "Review and respond to buyer offers.",
       tone: "dashboard-quick-link-primary",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -263,7 +263,7 @@ const SellerDashboard = () => {
     {
       to: "/seller/notifications",
       label: "Notifications",
-      detail: "Review unread alerts and platform updates",
+      detail: "View seller notifications and updates.",
       tone: unreadNotifications.length > 0 ? "dashboard-quick-link-danger" : "dashboard-quick-link-warning",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -276,7 +276,7 @@ const SellerDashboard = () => {
     {
       to: "/seller/pickups",
       label: "Pickups",
-      detail: "Manage pending collections and completed handoffs",
+      detail: "Manage pickup requests and status.",
       tone: pendingPickups.length > 0 ? "dashboard-quick-link-warning" : "dashboard-quick-link-success",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -295,7 +295,7 @@ const SellerDashboard = () => {
         <span className="dashboard-eyebrow">Seller Panel</span>
         <h1 className="dashboard-title">Seller Dashboard</h1>
         <p className="dashboard-subtitle">
-          Monitor auction performance, manage inventory, and jump into seller workflows from a more polished control panel.
+          Overview of your seller activity and key statistics.
         </p>
       </div>
 
@@ -318,8 +318,8 @@ const SellerDashboard = () => {
             </SectionGlyph>
             <div>
               <p className="dashboard-section-kicker">Stats Cards</p>
-              <h2 className="dashboard-section-title">Seller performance overview</h2>
-              <p className="dashboard-section-copy">Cleaner cards, clearer hierarchy, and consistent color treatment across key metrics.</p>
+              <h2 className="dashboard-section-title">Seller Activity Overview</h2>
+              <p className="dashboard-section-copy">Key statistics for your products, auctions, and pickups.</p>
             </div>
           </div>
         </div>
@@ -355,7 +355,7 @@ const SellerDashboard = () => {
             <div>
               <p className="dashboard-section-kicker">Quick Links</p>
               <h2 className="dashboard-section-title">Common seller actions</h2>
-              <p className="dashboard-section-copy">Action tiles now read as clickable widgets with a clearer visual response on hover.</p>
+              <p className="dashboard-section-copy">Quick access to tools for managing products and auctions.</p>
             </div>
           </div>
         </div>
@@ -393,7 +393,7 @@ const SellerDashboard = () => {
               <div>
                 <p className="dashboard-section-kicker">Active Auctions</p>
                 <h2 className="dashboard-section-title">Live seller listings</h2>
-                <p className="dashboard-section-copy">Upcoming auction deadlines surface first so urgent items stand out.</p>
+                <p className="dashboard-section-copy">Auctions that are currently live.</p>
               </div>
             </div>
             <Link to="/seller/auctions" className="dashboard-section-link">
@@ -442,7 +442,7 @@ const SellerDashboard = () => {
               <div>
                 <p className="dashboard-section-kicker">Recent Outcomes</p>
                 <h2 className="dashboard-section-title">Recently Ended Auctions</h2>
-                <p className="dashboard-section-copy">Ended listings are grouped with clearer result badges and more readable actions.</p>
+                <p className="dashboard-section-copy">Recently ended auctions and outcomes.</p>
               </div>
             </div>
             <Link to="/seller/auctions" className="dashboard-section-link">
@@ -492,7 +492,7 @@ const SellerDashboard = () => {
               <div>
                 <p className="dashboard-section-kicker">Alerts</p>
                 <h2 className="dashboard-section-title">Recent Notifications</h2>
-                <p className="dashboard-section-copy">Unread notices now carry stronger contrast while keeping the same underlying data.</p>
+                <p className="dashboard-section-copy">Recent notifications and account updates.</p>
               </div>
             </div>
             <Link to="/seller/notifications" className="dashboard-section-link">
