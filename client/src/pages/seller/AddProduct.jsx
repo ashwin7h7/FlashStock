@@ -78,62 +78,109 @@ const AddProduct = () => {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Add Product</h1>
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 max-w-lg">
-        {error && <p className="text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm mb-4">{error}</p>}
-        {success && <p className="text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm mb-4">{success}</p>}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-          <input name="name" type="text" required value={form.name} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
+      {/* ── Page heading ── */}
+      <div className="mb-7">
+        <h1 className="text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">Add Product</h1>
+        <p className="mt-1.5 text-sm text-slate-500">Create a new product listing for auction.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.09)] sm:p-8">
+        {/* ── Status messages ── */}
+        {error && (
+          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            {success}
+          </div>
+        )}
+
+        {/* ── Fields ── */}
+        <div className="space-y-5">
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Product Name</label>
+            <input
+              name="name" type="text" required value={form.name} onChange={handleChange}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-800 shadow-sm transition duration-150 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Description</label>
+            <textarea
+              name="description" required value={form.description} onChange={handleChange} rows={4}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-800 shadow-sm transition duration-150 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Price (Rs.)</label>
+              <input
+                name="price" type="number" required value={form.price} onChange={handleChange}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-800 shadow-sm transition duration-150 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Offer Price (Rs.)</label>
+              <input
+                name="offerPrice" type="number" value={form.offerPrice} onChange={handleChange}
+                placeholder="Defaults to price if empty"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-800 shadow-sm transition duration-150 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Category</label>
+            <input
+              name="category" type="text" required value={form.category} onChange={handleChange}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-800 shadow-sm transition duration-150 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Location (District)</label>
+            <select
+              name="location" required value={form.location} onChange={handleChange}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-800 shadow-sm transition duration-150 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            >
+              <option value="">Select a district</option>
+              {SRI_LANKA_DISTRICTS.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+            {user?.location?.trim() && (
+              <p className="mt-1.5 text-xs text-slate-500">Defaulted to your profile district. You can change it per listing.</p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Images <span className="font-normal text-slate-400">(up to 5)</span></label>
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition duration-150 hover:border-indigo-300 hover:bg-indigo-50/30">
+              <input
+                type="file" accept="image/*" multiple onChange={handleImageChange}
+                className="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100"
+              />
+              {images.length > 0 && (
+                <p className="mt-2 text-xs text-slate-500">{images.length} file{images.length !== 1 ? "s" : ""} selected</p>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <textarea name="description" required value={form.description} onChange={handleChange} rows={3}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+
+        {/* ── Submit button ── */}
+        <div className="mt-7">
+          <button
+            type="submit" disabled={submitting}
+            className="w-full rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white shadow-[0_8px_20px_rgba(79,70,229,0.26)] transition duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? "Adding..." : "Add Product"}
+          </button>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs.)</label>
-          <input name="price" type="number" required value={form.price} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Offer Price (Rs.)</label>
-          <input name="offerPrice" type="number" value={form.offerPrice} onChange={handleChange}
-            placeholder="Defaults to price if empty"
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-          <input name="category" type="text" required value={form.category} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Location (District)</label>
-          <select name="location" required value={form.location} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="">Select a district</option>
-            {SRI_LANKA_DISTRICTS.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-          {user?.location?.trim() && (
-            <p className="text-xs text-gray-500 mt-1">Defaulted to your profile district. You can change it per listing.</p>
-          )}
-        </div>
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Images (up to 5)</label>
-          <input type="file" accept="image/*" multiple onChange={handleImageChange}
-            className="w-full text-sm" />
-          {images.length > 0 && (
-            <p className="text-xs text-gray-500 mt-1">{images.length} file(s) selected</p>
-          )}
-        </div>
-        <button type="submit" disabled={submitting}
-          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed">
-          {submitting ? "Adding..." : "Add Product"}
-        </button>
       </form>
     </div>
   );
