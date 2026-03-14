@@ -14,6 +14,32 @@ const SectionGlyph = ({ children }) => (
   </span>
 );
 
+const getWonAuctionStatusMeta = (order) => {
+  const rawPickupStatus = order?.pickup?.pickupStatus;
+  const normalizedPickupStatus =
+    typeof rawPickupStatus === "string" ? rawPickupStatus.toUpperCase() : "";
+  const normalizedOrderStatus =
+    typeof order?.status === "string" ? order.status.toUpperCase() : "";
+
+  switch (normalizedPickupStatus) {
+    case "COMPLETED":
+    case "COMPLETED_PICKUP":
+      return { label: "Completed", tone: "dashboard-pill-success" };
+    case "PICKUP_CONFIRMED":
+      return { label: "Pickup Confirmed", tone: "dashboard-pill-primary" };
+    case "READY_FOR_PICKUP":
+      return { label: "Ready for Pickup", tone: "dashboard-pill-primary" };
+    case "WON_AUCTION":
+    case "PENDING":
+      return { label: "Pending Pickup", tone: "dashboard-pill-warning" };
+    default:
+      if (normalizedOrderStatus === "COMPLETED") {
+        return { label: "Won", tone: "dashboard-pill-neutral" };
+      }
+      return { label: "Pending Pickup", tone: "dashboard-pill-warning" };
+  }
+};
+
 const BuyerDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [activeBids, setActiveBids] = useState([]);
@@ -343,24 +369,22 @@ const BuyerDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.slice(0, 5).map((order) => (
-                    <tr key={order._id}>
-                      <td className="font-semibold">{order.productId?.name || "N/A"}</td>
-                      <td className="font-semibold text-indigo-600">Rs. {order.price}</td>
-                      <td>
-                        <span
-                          className={`dashboard-pill ${
-                            order.pickup?.pickupStatus === "completed"
-                              ? "dashboard-pill-success"
-                              : "dashboard-pill-warning"
-                          }`}
-                        >
-                          {order.pickup?.pickupStatus === "completed" ? "Pickup Done" : "Pending Pickup"}
-                        </span>
-                      </td>
-                      <td className="text-sm text-slate-500">{new Date(order.purchasedAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
+                  {orders.slice(0, 5).map((order) => {
+                    const statusMeta = getWonAuctionStatusMeta(order);
+
+                    return (
+                      <tr key={order._id}>
+                        <td className="font-semibold">{order.productId?.name || "N/A"}</td>
+                        <td className="font-semibold text-indigo-600">Rs. {order.price}</td>
+                        <td>
+                          <span className={`dashboard-pill ${statusMeta.tone}`}>
+                            {statusMeta.label}
+                          </span>
+                        </td>
+                        <td className="text-sm text-slate-500">{new Date(order.purchasedAt).toLocaleDateString()}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
