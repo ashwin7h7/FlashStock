@@ -11,6 +11,23 @@ const statusBadgeClass = {
   accepted: "bg-green-100 text-green-700",
   rejected: "bg-red-100 text-red-700",
   closed: "bg-gray-100 text-gray-700",
+  "auction ended": "bg-amber-100 text-amber-800",
+};
+
+const hasAuctionEnded = (product) => {
+  if (!product?.isAuction) return true;
+  if (product.auctionStatus && product.auctionStatus !== "active") return true;
+  if (product.auctionEndTime) {
+    const endMs = new Date(product.auctionEndTime).getTime();
+    if (Number.isFinite(endMs) && endMs <= Date.now()) return true;
+  }
+  return false;
+};
+
+const getDisplayStatus = (item) => {
+  if (item.status === "accepted") return "accepted";
+  if (hasAuctionEnded(item.productId)) return "auction ended";
+  return item.status || "closed";
 };
 
 const BuyerNegotiations = () => {
@@ -91,6 +108,7 @@ const BuyerNegotiations = () => {
       ) : (
         <div className="space-y-3">
           {sortedItems.map((item) => {
+            const displayStatus = getDisplayStatus(item);
             const sellerName = item.sellerId?.name || "Seller";
             const preview = item.lastMessage
               ? item.lastMessage.messageType === "offer"
@@ -114,9 +132,9 @@ const BuyerNegotiations = () => {
 
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadgeClass[item.status] || statusBadgeClass.closed}`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadgeClass[displayStatus] || statusBadgeClass.closed}`}
                   >
-                    {item.status}
+                    {displayStatus}
                   </span>
                   <Link
                     to={`/buyer/negotiations/${item._id}`}

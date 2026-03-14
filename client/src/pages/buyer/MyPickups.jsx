@@ -157,8 +157,8 @@ const MyPickups = () => {
   if (loading) return <div className="text-center py-20 text-gray-500">Loading pickups...</div>;
 
   const isCompleted = (p) => p.status === "COMPLETED" || p.status === "completed";
-  const canConfirm = (p) =>
-    p.status === "READY_FOR_PICKUP" || (p.status === "pending" && p.sellerConfirmed);
+  const canConfirm = (p) => p.status === "READY_FOR_PICKUP" && p.buyerConfirmed !== true;
+  const shouldShowWaitingForSeller = (p) => p.status === "WON_AUCTION" || p.status === "pending" || !p.sellerConfirmed;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -317,9 +317,13 @@ const MyPickups = () => {
                   >
                     {actionId === p._id ? "Confirming..." : "Confirm Pickup"}
                   </button>
-                ) : (
+                ) : shouldShowWaitingForSeller(p) ? (
                   <span className="inline-flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-full font-medium">
-                    ⏳ Waiting for seller to mark item as ready
+                    ⏳ Waiting for seller to mark item as ready.
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-full font-medium">
+                    Pickup already confirmed.
                   </span>
                 )}
               </div>

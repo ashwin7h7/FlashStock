@@ -48,6 +48,50 @@ const getLatestOfferMessage = async (negotiationId) => {
     .lean();
 };
 
+const hasAuctionEnded = (product) => {
+  if (!product) return true;
+  if (!product.isAuction) return true;
+  if (product.auctionStatus && product.auctionStatus !== "active") return true;
+  if (product.auctionEndTime) {
+    const endMs = new Date(product.auctionEndTime).getTime();
+    if (Number.isFinite(endMs) && endMs <= Date.now()) return true;
+  }
+  return false;
+};
+
+const closeIfAuctionEnded = async (negotiation, actorId) => {
+  const product = await Product.findById(negotiation.productId).select(
+    "isAuction auctionStatus auctionEndTime"
+  );
+
+  const auctionEnded = hasAuctionEnded(product);
+  if (!auctionEnded) {
+    return { auctionEnded: false, negotiationStatus: negotiation.status };
+  }
+
+  if (negotiation.status === "open") {
+    negotiation.status = "closed";
+    await negotiation.save();
+
+    const alreadyLogged = await NegotiationMessage.exists({
+      negotiationId: negotiation._id,
+      messageType: "system",
+      message: "Negotiation closed because the auction has ended.",
+    });
+
+    if (!alreadyLogged) {
+      await NegotiationMessage.create({
+        negotiationId: negotiation._id,
+        senderId: actorId || negotiation.sellerId,
+        message: "Negotiation closed because the auction has ended.",
+        messageType: "system",
+      });
+    }
+  }
+
+  return { auctionEnded: true, negotiationStatus: negotiation.status };
+};
+
 const closeCompetingNegotiations = async (acceptedNegotiation) => {
   const competingThreads = await Negotiation.find({
     productId: acceptedNegotiation.productId,
@@ -148,10 +192,16 @@ export const getMyNegotiations = async (req, res) => {
     const negotiations = await Negotiation.find({
       $or: [{ sellerId: userId }, { buyerId: userId }],
     })
-      .populate("productId", "name image offerPrice auctionStatus")
+      .populate("productId", "name image offerPrice auctionStatus auctionEndTime isAuction")
       .populate("sellerId", "name email")
       .populate("buyerId", "name email")
       .sort({ updatedAt: -1 });
+
+    await Promise.all(
+      negotiations.map(async (negotiation) => {
+        await closeIfAuctionEnded(negotiation, req.userId);
+      })
+    );
 
     res.json({ success: true, negotiations });
   } catch (error) {
@@ -166,7 +216,7 @@ export const getMyNegotiations = async (req, res) => {
 export const getNegotiationById = async (req, res) => {
   try {
     const negotiation = await Negotiation.findById(req.params.id)
-      .populate("productId", "name image offerPrice startingBid auctionStatus sellerId")
+      .populate("productId", "name image offerPrice startingBid auctionStatus auctionEndTime isAuction sellerId")
       .populate("sellerId", "name email")
       .populate("buyerId", "name email");
 
@@ -177,6 +227,8 @@ export const getNegotiationById = async (req, res) => {
     if (!isParticipant(negotiation, req.userId)) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
+
+    await closeIfAuctionEnded(negotiation, req.userId);
 
     res.json({ success: true, negotiation });
   } catch (error) {
@@ -198,6 +250,8 @@ export const getMessages = async (req, res) => {
     if (!isParticipant(negotiation, req.userId)) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
+
+    await closeIfAuctionEnded(negotiation, req.userId);
 
     const messages = await NegotiationMessage.find({
       negotiationId: req.params.id,
@@ -227,6 +281,14 @@ export const sendMessage = async (req, res) => {
 
     if (!isParticipant(negotiation, senderId)) {
       return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const { auctionEnded } = await closeIfAuctionEnded(negotiation, senderId);
+    if (auctionEnded) {
+      return res.status(400).json({
+        success: false,
+        message: "Negotiation closed because the auction has ended.",
+      });
     }
 
     if (negotiation.status !== "open") {
@@ -336,6 +398,14 @@ export const acceptOffer = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Access denied",
+      });
+    }
+
+    const { auctionEnded } = await closeIfAuctionEnded(negotiation, userId);
+    if (auctionEnded && negotiation.status !== "accepted") {
+      return res.status(400).json({
+        success: false,
+        message: "Negotiation closed because the auction has ended.",
       });
     }
 
@@ -466,6 +536,14 @@ export const rejectOffer = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Access denied",
+      });
+    }
+
+    const { auctionEnded } = await closeIfAuctionEnded(negotiation, userId);
+    if (auctionEnded) {
+      return res.status(400).json({
+        success: false,
+        message: "Negotiation closed because the auction has ended.",
       });
     }
 

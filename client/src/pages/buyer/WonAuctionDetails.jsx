@@ -78,8 +78,14 @@ const WonAuctionDetails = () => {
   const product = order.productId;
   const pickup = order.pickup;
   const seller = product.sellerId;
-  const pickupCompleted = pickup?.pickupStatus === "completed";
-  const canConfirmPickup = pickup && !pickupCompleted && !pickup.buyerConfirmed;
+  const normalizedPickupStatus = pickup?.pickupStatus;
+  const pickupCompleted = normalizedPickupStatus === "COMPLETED" || normalizedPickupStatus === "completed";
+  const canConfirmPickup =
+    pickup &&
+    normalizedPickupStatus === "READY_FOR_PICKUP" &&
+    pickup.buyerConfirmed !== true;
+  const shouldShowWaitingForSeller =
+    pickup && (normalizedPickupStatus === "WON_AUCTION" || normalizedPickupStatus === "pending" || !pickup.sellerConfirmed);
   const sellerLocation = seller?.location?.trim() || product?.location || "Not added yet";
   const sellerPhone = seller?.phone?.trim() || "Phone not added yet";
 
@@ -263,6 +269,12 @@ const WonAuctionDetails = () => {
                 {!canConfirmPickup && !pickupCompleted && pickup.buyerConfirmed && (
                   <div className="inline-flex px-3 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium">
                     You already confirmed pickup
+                  </div>
+                )}
+
+                {!canConfirmPickup && !pickupCompleted && !pickup.buyerConfirmed && shouldShowWaitingForSeller && (
+                  <div className="inline-flex px-3 py-2 rounded-lg bg-amber-100 text-amber-700 font-medium">
+                    Waiting for seller to mark item as ready.
                   </div>
                 )}
               </div>

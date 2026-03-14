@@ -188,7 +188,7 @@ const BuyerNegotiationChat = () => {
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs text-gray-500">Negotiation Status</p>
-          <p className="font-semibold capitalize text-gray-800">{uiState.status}</p>
+          <p className="font-semibold capitalize text-gray-800">{uiState.statusLabel}</p>
           {negotiation.acceptedOfferAmount && (
             <p className="text-sm text-green-700 mt-2">Accepted: Rs. {negotiation.acceptedOfferAmount}</p>
           )}
@@ -219,6 +219,15 @@ const BuyerNegotiationChat = () => {
           <p className="text-sm text-green-700 mt-1">
             Offer Accepted at Rs. {uiState.acceptedAmount}
           </p>
+          <p className="text-sm text-green-700 mt-1">
+            This chat is now visible as a completed record. No further actions are allowed.
+          </p>
+        </div>
+      )}
+
+      {uiState.isClosedByAuctionEnd && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="font-semibold">Negotiation closed because the auction has ended.</p>
         </div>
       )}
 
@@ -364,7 +373,7 @@ const BuyerNegotiationChat = () => {
 
       {uiState.areActionsDisabled && (
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-          This negotiation is {uiState.status}. New messages/offers are disabled.
+          This negotiation is {uiState.statusLabel}. New messages/offers are disabled.
         </div>
       )}
     </div>

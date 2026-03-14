@@ -31,6 +31,14 @@ export const deriveNegotiationUiState = ({ negotiation, messages, currentUserId 
   const isRejected = status === "rejected";
   const isClosed = status === "closed";
 
+  const auctionStatus = negotiation?.productId?.auctionStatus;
+  const endTime = negotiation?.productId?.auctionEndTime;
+  const endTimeMs = endTime ? new Date(endTime).getTime() : null;
+  const auctionEndedByTime = Number.isFinite(endTimeMs) ? endTimeMs <= Date.now() : false;
+  const auctionEndedByStatus = Boolean(auctionStatus && auctionStatus !== "active");
+  const isAuctionEnded = auctionEndedByStatus || auctionEndedByTime;
+  const isClosedByAuctionEnd = !isAccepted && isAuctionEnded;
+
   const buyerId = toIdString(negotiation?.buyerId);
   const sellerId = toIdString(negotiation?.sellerId);
   const userId = toIdString(currentUserId);
@@ -43,6 +51,7 @@ export const deriveNegotiationUiState = ({ negotiation, messages, currentUserId 
 
   const canBuyerRespondToLatestOffer = Boolean(
     isOpen &&
+      !isAuctionEnded &&
       latestOffer &&
       isCurrentUserBuyer &&
       latestOfferSenderId &&
@@ -51,13 +60,14 @@ export const deriveNegotiationUiState = ({ negotiation, messages, currentUserId 
 
   const canSellerRespondToLatestOffer = Boolean(
     isOpen &&
+      !isAuctionEnded &&
       latestOffer &&
       isCurrentUserSeller &&
       latestOfferSenderId &&
       latestOfferSenderId !== sellerId
   );
 
-  const areActionsDisabled = !isOpen;
+  const areActionsDisabled = !isOpen || isAuctionEnded;
 
   const waitingFor = isOpen && latestOffer
     ? latestOfferSenderId === buyerId
@@ -82,10 +92,13 @@ export const deriveNegotiationUiState = ({ negotiation, messages, currentUserId 
 
   return {
     status,
+    statusLabel: isAccepted ? "accepted" : isClosedByAuctionEnd ? "auction ended" : status,
     isOpen,
     isAccepted,
     isRejected,
     isClosed,
+    isAuctionEnded,
+    isClosedByAuctionEnd,
     latestOffer,
     latestOfferSenderId,
     canBuyerRespondToLatestOffer,
