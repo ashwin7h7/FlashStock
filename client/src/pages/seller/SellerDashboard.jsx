@@ -3,6 +3,18 @@ import { Link } from "react-router-dom";
 import API from "../../api/axios";
 import { getEndedAuctionState } from "../../utils/auctionState";
 
+const DashboardGlyph = ({ children }) => (
+  <span className="dashboard-stat-icon" aria-hidden="true">
+    {children}
+  </span>
+);
+
+const SectionGlyph = ({ children }) => (
+  <span className="dashboard-inline-icon" aria-hidden="true">
+    {children}
+  </span>
+);
+
 const SellerDashboard = () => {
   const [products, setProducts] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -38,7 +50,7 @@ const SellerDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  if (loading) return <div className="text-center py-20">Loading...</div>;
+  if (loading) return <div className="py-20 text-center">Loading...</div>;
 
   const hasCompletedPickup = (productId) =>
     pickups.some((pk) => (pk.productId?._id || pk.productId) === productId && pk.status === "completed");
@@ -61,12 +73,12 @@ const SellerDashboard = () => {
   const getEndedStatus = (product) => {
     const { hasAcceptedBids } = getEndedAuctionState(product);
     if (hasCompletedPickup(product._id)) {
-      return { text: "Pickup Completed", color: "bg-purple-100 text-purple-700" };
+      return { text: "Pickup Completed", color: "dashboard-pill-primary" };
     }
     if (hasAcceptedBids) {
-      return { text: "Winner Selected", color: "bg-amber-100 text-amber-700" };
+      return { text: "Winner Selected", color: "dashboard-pill-warning" };
     }
-    return { text: "Ended (No Bids)", color: "bg-gray-100 text-gray-700" };
+    return { text: "Ended (No Bids)", color: "dashboard-pill-neutral" };
   };
 
   const getTimeRemaining = (endTime) => {
@@ -95,112 +107,320 @@ const SellerDashboard = () => {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
+  const stats = [
+    {
+      label: "Total Products",
+      value: products.length,
+      note: "Every product currently listed under your seller account",
+      tone: "dashboard-card-primary",
+      kicker: "Inventory",
+      icon: (
+        <DashboardGlyph>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 6.75V18a.75.75 0 0 0 .75.75h12a.75.75 0 0 0 .75-.75V6.75" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 10.5h6" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 14.25h4.5" />
+          </svg>
+        </DashboardGlyph>
+      ),
+    },
+    {
+      label: "Active Auctions",
+      value: activeAuctions.length,
+      note: "Live seller listings that are accepting bids right now",
+      tone: "dashboard-card-success",
+      kicker: "Running",
+      icon: (
+        <DashboardGlyph>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5h15" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 16.5V9.75" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V5.25" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 16.5V12" />
+          </svg>
+        </DashboardGlyph>
+      ),
+    },
+    {
+      label: "Ended Auctions",
+      value: endedAuctions.length,
+      note: "Finished rounds awaiting review, selection, or fulfillment",
+      tone: "dashboard-card-neutral",
+      kicker: "Completed",
+      icon: (
+        <DashboardGlyph>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l3.75 2.25" />
+            <circle cx="12" cy="12" r="8.25" />
+          </svg>
+        </DashboardGlyph>
+      ),
+    },
+    {
+      label: "Unread Notifications",
+      value: unreadNotifications.length,
+      note: "Bid events, winner updates, and system alerts waiting for review",
+      tone: unreadNotifications.length > 0 ? "dashboard-card-warning" : "dashboard-card-neutral",
+      kicker: "Attention",
+      icon: (
+        <DashboardGlyph>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9a6 6 0 1 0-12 0v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.082 5.455 1.31" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17.25a2.25 2.25 0 0 0 4.5 0" />
+          </svg>
+        </DashboardGlyph>
+      ),
+    },
+    {
+      label: "Ready for Auction",
+      value: productsReadyForAuction.length,
+      note: "Products that can be started or restarted without blockers",
+      tone: "dashboard-card-primary",
+      kicker: "Standby",
+      icon: (
+        <DashboardGlyph>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 9 12 4.5 16.5 9" />
+          </svg>
+        </DashboardGlyph>
+      ),
+    },
+    {
+      label: "Pending Pickups",
+      value: pendingPickups.length,
+      note: "Orders waiting for handoff, confirmation, or completion",
+      tone: pendingPickups.length > 0 ? "dashboard-card-danger" : "dashboard-card-success",
+      kicker: "Fulfillment",
+      icon: (
+        <DashboardGlyph>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5h11.25v7.5H3.75z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5h2.379a1.5 1.5 0 0 1 1.2.6l1.671 2.229v1.671H15" />
+            <circle cx="7.5" cy="17.25" r="1.5" />
+            <circle cx="17.25" cy="17.25" r="1.5" />
+          </svg>
+        </DashboardGlyph>
+      ),
+    },
+  ];
+
+  const quickLinks = [
+    {
+      to: "/seller/add-product",
+      label: "Add Product",
+      detail: "Create a new listing and prepare it for auction",
+      tone: "dashboard-quick-link-primary",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h15" />
+        </svg>
+      ),
+    },
+    {
+      to: "/seller/products",
+      label: "My Products",
+      detail: "Review inventory details, images, and status",
+      tone: "dashboard-quick-link-primary",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 6.75V18a.75.75 0 0 0 .75.75h12a.75.75 0 0 0 .75-.75V6.75" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 10.5h6" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 14.25h4.5" />
+        </svg>
+      ),
+    },
+    {
+      to: "/seller/auctions",
+      label: "My Auctions",
+      detail: "Open and monitor active or completed rounds",
+      tone: "dashboard-quick-link-success",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5h15" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 16.5V9.75" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V5.25" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 16.5V12" />
+        </svg>
+      ),
+    },
+    {
+      to: "/seller/negotiations",
+      label: "Negotiations",
+      detail: "Respond to buyer offers and direct pricing chats",
+      tone: "dashboard-quick-link-primary",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 10.5h9" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25h5.25" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 6.75h15v10.5h-4.5L12 20.25l-3-3H4.5z" />
+        </svg>
+      ),
+    },
+    {
+      to: "/seller/notifications",
+      label: "Notifications",
+      detail: "Review unread alerts and platform updates",
+      tone: unreadNotifications.length > 0 ? "dashboard-quick-link-danger" : "dashboard-quick-link-warning",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9a6 6 0 1 0-12 0v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.082 5.455 1.31" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17.25a2.25 2.25 0 0 0 4.5 0" />
+        </svg>
+      ),
+      badge: unreadNotifications.length > 0 ? unreadNotifications.length : null,
+    },
+    {
+      to: "/seller/pickups",
+      label: "Pickups",
+      detail: "Manage pending collections and completed handoffs",
+      tone: pendingPickups.length > 0 ? "dashboard-quick-link-warning" : "dashboard-quick-link-success",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5h11.25v7.5H3.75z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5h2.379a1.5 1.5 0 0 1 1.2.6l1.671 2.229v1.671H15" />
+          <circle cx="7.5" cy="17.25" r="1.5" />
+          <circle cx="17.25" cy="17.25" r="1.5" />
+        </svg>
+      ),
+    },
+  ];
+
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-8">Seller Dashboard</h1>
+    <div className="dashboard-shell">
+      <div className="dashboard-page-header">
+        <span className="dashboard-eyebrow">Seller Panel</span>
+        <h1 className="dashboard-title">Seller Dashboard</h1>
+        <p className="dashboard-subtitle">
+          Monitor auction performance, manage inventory, and jump into seller workflows from a more polished control panel.
+        </p>
+      </div>
+
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-        <div className="bg-indigo-50 border border-indigo-200 p-6 rounded-lg shadow-sm">
-          <p className="text-3xl font-bold text-indigo-600">{products.length}</p>
-          <p className="text-gray-600 mt-2 font-medium">Total Products</p>
-          <p className="text-xs text-gray-500 mt-1">All listed products</p>
-        </div>
-        <div className="bg-green-50 border border-green-200 p-6 rounded-lg shadow-sm">
-          <p className="text-3xl font-bold text-green-600">{activeAuctions.length}</p>
-          <p className="text-gray-600 mt-2 font-medium">Active Auctions</p>
-          <p className="text-xs text-gray-500 mt-1">Running right now</p>
-        </div>
-        <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm">
-          <p className="text-3xl font-bold text-gray-700">{endedAuctions.length}</p>
-          <p className="text-gray-600 mt-2 font-medium">Ended Auctions</p>
-          <p className="text-xs text-gray-500 mt-1">Completed rounds</p>
-        </div>
-        <div className="bg-orange-50 border border-orange-200 p-6 rounded-lg shadow-sm">
-          <p className="text-3xl font-bold text-orange-600">{unreadNotifications.length}</p>
-          <p className="text-gray-600 mt-2 font-medium">Unread Notifications</p>
-          <p className="text-xs text-gray-500 mt-1">Needs your attention</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg shadow-sm">
-          <p className="text-3xl font-bold text-blue-600">{productsReadyForAuction.length}</p>
-          <p className="text-gray-600 mt-2 font-medium">Ready for Auction</p>
-          <p className="text-xs text-gray-500 mt-1">Can be started or restarted</p>
-        </div>
-        <div className="bg-teal-50 border border-teal-200 p-6 rounded-lg shadow-sm">
-          <p className="text-3xl font-bold text-teal-600">{pendingPickups.length}</p>
-          <p className="text-gray-600 mt-2 font-medium">Pending Pickups</p>
-          <p className="text-xs text-gray-500 mt-1">Waiting for confirmations</p>
-        </div>
-      </div>
 
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Quick Links</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Link to="/seller/add-product" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
-            <p className="text-2xl mb-2">➕</p>
-            <p className="text-sm font-medium text-gray-700">Add Product</p>
-          </Link>
-          <Link to="/seller/products" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
-            <p className="text-2xl mb-2">📦</p>
-            <p className="text-sm font-medium text-gray-700">My Products</p>
-          </Link>
-          <Link to="/seller/auctions" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
-            <p className="text-2xl mb-2">📈</p>
-            <p className="text-sm font-medium text-gray-700">My Auctions</p>
-          </Link>
-          <Link to="/seller/negotiations" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
-            <p className="text-2xl mb-2">💬</p>
-            <p className="text-sm font-medium text-gray-700">Negotiations</p>
-          </Link>
-          <Link to="/seller/notifications" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center relative">
-            <p className="text-2xl mb-2">🔔</p>
-            <p className="text-sm font-medium text-gray-700">Notifications</p>
-            {unreadNotifications.length > 0 && (
-              <span className="absolute top-2 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                {unreadNotifications.length}
-              </span>
-            )}
-          </Link>
-          <Link to="/seller/pickups" className="bg-white border border-gray-200 p-4 rounded-lg hover:shadow-md transition text-center">
-            <p className="text-2xl mb-2">🚚</p>
-            <p className="text-sm font-medium text-gray-700">Pickups</p>
-          </Link>
+      <section className="dashboard-section">
+        <div className="dashboard-section-header">
+          <div className="dashboard-section-title-group">
+            <SectionGlyph>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5h15" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 16.5V9.75" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V5.25" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 16.5V12" />
+              </svg>
+            </SectionGlyph>
+            <div>
+              <p className="dashboard-section-kicker">Stats Cards</p>
+              <h2 className="dashboard-section-title">Seller performance overview</h2>
+              <p className="dashboard-section-copy">Cleaner cards, clearer hierarchy, and consistent color treatment across key metrics.</p>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <div className="dashboard-stats-grid dashboard-stats-grid-6">
+          {stats.map((stat) => (
+            <div key={stat.label} className={`dashboard-card dashboard-stat-card ${stat.tone}`}>
+              <div className="dashboard-stat-top">
+                <div>
+                  <p className="dashboard-stat-kicker">{stat.kicker}</p>
+                  <p className="dashboard-stat-value">{stat.value}</p>
+                </div>
+                {stat.icon}
+              </div>
+              <div>
+                <p className="dashboard-stat-label">{stat.label}</p>
+                <p className="dashboard-stat-note">{stat.note}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="dashboard-section">
+        <div className="dashboard-section-header">
+          <div className="dashboard-section-title-group">
+            <SectionGlyph>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h10.5v10.5H6.75z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75h4.5v4.5h-4.5z" />
+              </svg>
+            </SectionGlyph>
+            <div>
+              <p className="dashboard-section-kicker">Quick Links</p>
+              <h2 className="dashboard-section-title">Common seller actions</h2>
+              <p className="dashboard-section-copy">Action tiles now read as clickable widgets with a clearer visual response on hover.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="dashboard-quick-links-grid">
+          {quickLinks.map((link) => (
+            <Link key={link.label} to={link.to} className={`dashboard-quick-link ${link.tone}`}>
+              <div className="flex items-start justify-between gap-3">
+                <span className="dashboard-quick-link-icon" aria-hidden="true">
+                  {link.icon}
+                </span>
+                {link.badge ? <span className="dashboard-badge">{link.badge}</span> : null}
+              </div>
+              <div>
+                <p className="dashboard-quick-link-title">{link.label}</p>
+                <p className="dashboard-quick-link-copy">{link.detail}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <div className="space-y-8">
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Active Auctions</h2>
-            <Link to="/seller/auctions" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-              View all auctions →
+        <section className="dashboard-section">
+          <div className="dashboard-section-header">
+            <div className="dashboard-section-title-group">
+              <SectionGlyph>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5h15" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 16.5V9.75" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V5.25" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 16.5V12" />
+                </svg>
+              </SectionGlyph>
+              <div>
+                <p className="dashboard-section-kicker">Active Auctions</p>
+                <h2 className="dashboard-section-title">Live seller listings</h2>
+                <p className="dashboard-section-copy">Upcoming auction deadlines surface first so urgent items stand out.</p>
+              </div>
+            </div>
+            <Link to="/seller/auctions" className="dashboard-section-link">
+              View all auctions
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
+
           {recentActiveAuctions.length === 0 ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-6 text-sm text-gray-500">
+            <div className="dashboard-empty-state">
               No active auctions right now. Start one from My Auctions or Add Product.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="dashboard-split-grid">
               {recentActiveAuctions.map((product) => (
-                <div key={product._id} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                <div key={product._id} className="dashboard-list-card">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-semibold text-gray-800">{product.name}</h3>
-                      <p className="text-sm text-indigo-600 font-semibold mt-1">Current highest: Rs. {product.offerPrice}</p>
-                      <p className="text-xs text-gray-500 mt-1">Ends {new Date(product.auctionEndTime).toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">{getTimeRemaining(product.auctionEndTime)}</p>
+                      <h3 className="dashboard-item-title">{product.name}</h3>
+                      <p className="dashboard-item-copy text-indigo-600 font-semibold">Current highest: Rs. {product.offerPrice}</p>
+                      <p className="dashboard-item-meta">Ends {new Date(product.auctionEndTime).toLocaleString()}</p>
+                      <p className="dashboard-item-meta">{getTimeRemaining(product.auctionEndTime)}</p>
                     </div>
-                    <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-green-100 text-green-700">Live</span>
+                    <span className="dashboard-pill dashboard-pill-success">Live</span>
                   </div>
                   <div className="mt-3">
-                    <Link
-                      to={`/seller/auctions/${product._id}`}
-                      className="inline-flex items-center text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700"
-                    >
+                    <Link to={`/seller/auctions/${product._id}`} className="dashboard-button">
                       Monitor Auction
                     </Link>
                   </div>
@@ -208,39 +428,48 @@ const SellerDashboard = () => {
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Recently Ended Auctions</h2>
-            <Link to="/seller/auctions" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-              View results →
+        <section className="dashboard-section">
+          <div className="dashboard-section-header">
+            <div className="dashboard-section-title-group">
+              <SectionGlyph>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l3.75 2.25" />
+                  <circle cx="12" cy="12" r="8.25" />
+                </svg>
+              </SectionGlyph>
+              <div>
+                <p className="dashboard-section-kicker">Recent Outcomes</p>
+                <h2 className="dashboard-section-title">Recently Ended Auctions</h2>
+                <p className="dashboard-section-copy">Ended listings are grouped with clearer result badges and more readable actions.</p>
+              </div>
+            </div>
+            <Link to="/seller/auctions" className="dashboard-section-link">
+              View results
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
+
           {recentEndedAuctions.length === 0 ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-6 text-sm text-gray-500">
+            <div className="dashboard-empty-state">
               No ended auctions yet. Ended auctions and outcomes will appear here.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="dashboard-split-grid">
               {recentEndedAuctions.map((product) => {
                 const endedStatus = getEndedStatus(product);
                 return (
-                  <div key={product._id} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                  <div key={product._id} className="dashboard-list-card">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-semibold text-gray-800">{product.name}</h3>
-                        <p className="text-sm text-gray-700 mt-1">Final bid: Rs. {product.offerPrice}</p>
+                        <h3 className="dashboard-item-title">{product.name}</h3>
+                        <p className="dashboard-item-copy">Final bid: Rs. {product.offerPrice}</p>
                       </div>
-                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${endedStatus.color}`}>
-                        {endedStatus.text}
-                      </span>
+                      <span className={`dashboard-pill ${endedStatus.color}`}>{endedStatus.text}</span>
                     </div>
                     <div className="mt-3">
-                      <Link
-                        to={`/seller/auctions/${product._id}`}
-                        className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200"
-                      >
+                      <Link to={`/seller/auctions/${product._id}`} className="dashboard-button-secondary">
                         View Auction
                       </Link>
                     </div>
@@ -249,39 +478,53 @@ const SellerDashboard = () => {
               })}
             </div>
           )}
-        </div>
+        </section>
 
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Recent Notifications</h2>
-            <Link to="/seller/notifications" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-              Open notifications →
+        <section className="dashboard-section">
+          <div className="dashboard-section-header">
+            <div className="dashboard-section-title-group">
+              <SectionGlyph>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9a6 6 0 1 0-12 0v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.082 5.455 1.31" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17.25a2.25 2.25 0 0 0 4.5 0" />
+                </svg>
+              </SectionGlyph>
+              <div>
+                <p className="dashboard-section-kicker">Alerts</p>
+                <h2 className="dashboard-section-title">Recent Notifications</h2>
+                <p className="dashboard-section-copy">Unread notices now carry stronger contrast while keeping the same underlying data.</p>
+              </div>
+            </div>
+            <Link to="/seller/notifications" className="dashboard-section-link">
+              Open notifications
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
+
           {recentNotifications.length === 0 ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-6 text-sm text-gray-500">
+            <div className="dashboard-empty-state">
               No notifications yet. Updates on bids, winners, and pickups will appear here.
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {recentNotifications.map((notification, index) => (
+            <div className="dashboard-panel dashboard-notification-list">
+              {recentNotifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`px-4 py-3 ${index !== recentNotifications.length - 1 ? "border-b border-gray-100" : ""} ${notification.isRead ? "bg-white" : "bg-indigo-50"}`}
+                  className={`dashboard-notification-item ${notification.isRead ? "" : "dashboard-notification-item-unread"}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-gray-800">{notification.title}</p>
-                      <p className="text-sm text-gray-600 mt-0.5">{notification.message}</p>
+                      <p className="mt-0.5 text-sm text-gray-600">{notification.message}</p>
                     </div>
-                    {!notification.isRead && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Unread</span>}
+                    {!notification.isRead && <span className="dashboard-pill dashboard-pill-primary">Unread</span>}
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">{new Date(notification.createdAt).toLocaleString()}</p>
+                  <p className="mt-1 text-xs text-gray-400">{new Date(notification.createdAt).toLocaleString()}</p>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

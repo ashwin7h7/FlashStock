@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useEffectEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { connectSocket, disconnectSocket } from "../../services/socket";
@@ -11,8 +11,9 @@ const FINAL_STATE_RETRY_LIMIT = 6;
 
 const AuctionDetails = () => {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
-  const { user, isSeller: isSellerRole } = useAuth();
+  const { user } = useAuth();
 
   const [product, setProduct] = useState(null);
   const [bids, setBids] = useState([]);
@@ -307,14 +308,23 @@ const AuctionDetails = () => {
   if (!product)
     return <div className="text-center py-20 text-gray-500">Auction not found.</div>;
 
-  const isProductSeller = user && String(product.sellerId) === String(user._id);
+  const loggedInUserId = user?._id ? String(user._id) : "";
+  const auctionSellerId = product?.sellerId?._id
+    ? String(product.sellerId._id)
+    : product?.sellerId
+      ? String(product.sellerId)
+      : "";
+  const isProductSeller = Boolean(loggedInUserId && auctionSellerId && loggedInUserId === auctionSellerId);
+  const isSellerPanelMode = location.pathname.startsWith("/seller/");
+  const isBuyerPanelMode = !isSellerPanelMode;
   const closedByNegotiationState = isAuctionClosedByNegotiation(product);
+  const isAuctionActive = Boolean(product?.isAuction && product?.auctionStatus === "active");
+  const isNegotiationAllowed = Boolean(isAuctionActive && !closedByNegotiationState);
   const canNegotiate = Boolean(
-    user &&
-      !isSellerRole() &&
+    isBuyerPanelMode &&
+      user &&
       !isProductSeller &&
-      product?.isAuction &&
-      product?.auctionStatus === "active"
+      isNegotiationAllowed
   );
 
   const handleStartNegotiation = async () => {
