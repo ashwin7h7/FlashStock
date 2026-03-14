@@ -1,5 +1,19 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import flashStockLogo from "../assets/FlashStock_Logo.png";
+
+const buyerNavItems = [
+  { to: "/buyer/dashboard", label: "Dashboard", end: true },
+  { to: "/buyer/bids", label: "My Bids" },
+  { to: "/buyer/negotiations", label: "Negotiations" },
+  { to: "/buyer/won", label: "Won" },
+  { to: "/buyer/pickups", label: "Pickups" },
+  { to: "/buyer/notifications", label: "Notifications" },
+  { to: "/buyer/profile", label: "Profile" },
+];
+
+const getNavLinkClassName = ({ isActive }) =>
+  `app-navbar-link ${isActive ? "app-navbar-link-active" : ""}`;
 
 const BuyerLayout = () => {
   const { logout, isSeller } = useAuth();
@@ -12,21 +26,30 @@ const BuyerLayout = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
-          <Link to="/buyer/dashboard" className="text-xl font-bold text-indigo-600">Flash Stock</Link>
-          <div className="flex items-center gap-4 text-sm">
-            <Link to="/buyer/dashboard" className="text-gray-700 hover:text-indigo-600">Dashboard</Link>
-            <Link to="/buyer/bids" className="text-gray-700 hover:text-indigo-600">My Bids</Link>
-            <Link to="/buyer/negotiations" className="text-gray-700 hover:text-indigo-600">Negotiations</Link>
-            <Link to="/buyer/won" className="text-gray-700 hover:text-indigo-600">Won</Link>
-            <Link to="/buyer/pickups" className="text-gray-700 hover:text-indigo-600">Pickups</Link>
-            <Link to="/buyer/notifications" className="text-gray-700 hover:text-indigo-600">Notifications</Link>
-            <Link to="/buyer/profile" className="text-gray-700 hover:text-indigo-600">Profile</Link>
+      <nav className="app-navbar">
+        <div className="app-navbar-inner">
+          <div className="flex items-center justify-between gap-4">
+            <Link to="/buyer/dashboard" className="app-navbar-brand">
+              <img src={flashStockLogo} alt="Flash Stock" className="app-navbar-logo-image" />
+              <span className="sr-only">Flash Stock</span>
+            </Link>
+          </div>
+
+          <div className="app-navbar-links text-sm">
+            {buyerNavItems.map((item) => (
+              <NavLink key={item.to} to={item.to} end={item.end} className={getNavLinkClassName}>
+                {item.label}
+              </NavLink>
+            ))}
             {isSeller() && (
-              <Link to="/seller/dashboard" className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700">Seller Panel</Link>
+              <NavLink to="/seller/dashboard" className="app-navbar-panel-switch">
+                Seller Panel
+              </NavLink>
             )}
-            <button onClick={handleLogout} className="text-red-600 hover:text-red-800">Logout</button>
+            <span className="app-navbar-actions-divider" aria-hidden="true" />
+            <button onClick={handleLogout} className="app-navbar-logout">
+              Logout
+            </button>
           </div>
         </div>
       </nav>

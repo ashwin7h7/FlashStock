@@ -1,5 +1,20 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import flashStockLogo from "../assets/FlashStock_Logo.png";
+
+const sellerNavItems = [
+  { to: "/seller/dashboard", label: "Dashboard", end: true },
+  { to: "/seller/add-product", label: "Add Product" },
+  { to: "/seller/products", label: "My Products" },
+  { to: "/seller/auctions", label: "Auctions" },
+  { to: "/seller/negotiations", label: "Negotiations" },
+  { to: "/seller/pickups", label: "Pickups" },
+  { to: "/seller/notifications", label: "Notifications" },
+  { to: "/seller/profile", label: "Profile" },
+];
+
+const getSellerNavLinkClassName = ({ isActive }) =>
+  `app-navbar-link app-navbar-link-compact ${isActive ? "app-navbar-link-active" : ""}`;
 
 const SellerLayout = () => {
   const { logout } = useAuth();
@@ -12,20 +27,35 @@ const SellerLayout = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
-          <Link to="/seller/dashboard" className="text-xl font-bold text-indigo-600">Flash Stock</Link>
-          <div className="flex items-center gap-4 text-sm">
-            <Link to="/seller/dashboard" className="text-gray-700 hover:text-indigo-600">Dashboard</Link>
-            <Link to="/seller/add-product" className="text-gray-700 hover:text-indigo-600">Add Product</Link>
-            <Link to="/seller/products" className="text-gray-700 hover:text-indigo-600">My Products</Link>
-            <Link to="/seller/auctions" className="text-gray-700 hover:text-indigo-600">Auctions</Link>
-            <Link to="/seller/negotiations" className="text-gray-700 hover:text-indigo-600">Negotiations</Link>
-            <Link to="/seller/pickups" className="text-gray-700 hover:text-indigo-600">Pickups</Link>
-            <Link to="/seller/notifications" className="text-gray-700 hover:text-indigo-600">Notifications</Link>
-            <Link to="/seller/profile" className="text-gray-700 hover:text-indigo-600">Profile</Link>
-            <Link to="/buyer/dashboard" className="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">Buyer Panel</Link>
-            <button onClick={handleLogout} className="text-red-600 hover:text-red-800">Logout</button>
+      <nav className="app-navbar app-navbar-seller">
+        <div className="app-navbar-inner">
+          <div className="app-navbar-seller-top">
+            <div className="app-navbar-brand-slot">
+              <Link to="/seller/dashboard" className="app-navbar-brand">
+                <img src={flashStockLogo} alt="Flash Stock" className="app-navbar-logo-image app-navbar-logo-image-seller" />
+                <span className="sr-only">Flash Stock</span>
+              </Link>
+            </div>
+
+            <div className="app-navbar-actions text-sm">
+              <NavLink to="/buyer/dashboard" className="app-navbar-panel-switch app-navbar-panel-switch-secondary">
+                Buyer Panel
+              </NavLink>
+              <span className="app-navbar-actions-divider" aria-hidden="true" />
+              <button onClick={handleLogout} className="app-navbar-logout">
+                Logout
+              </button>
+            </div>
+          </div>
+
+          <div className="app-navbar-seller-main">
+            <div className="app-navbar-primary-links text-sm">
+              {sellerNavItems.map((item) => (
+                <NavLink key={item.to} to={item.to} end={item.end} className={getSellerNavLinkClassName}>
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           </div>
         </div>
       </nav>
