@@ -18,7 +18,7 @@ const MyProducts = () => {
     try {
       const [prodRes, pickupRes] = await Promise.all([
         API.get("/product/my-products"),
-        API.get("/pickups"),
+        API.get("/pickups?role=seller"),
       ]);
       if (prodRes.data.success) setProducts(prodRes.data.products);
       else setError(prodRes.data.message || "Failed to load products");

@@ -1,12 +1,28 @@
 import Pickup from "../models/Pickup.js";
 import Notification from "../models/Notification.js";
 
-// GET /api/pickups
+// GET /api/pickups?role=buyer|seller
+// Strict role-based pickup filtering:
+// - role=buyer: return ONLY pickups where logged-in user is the buyer
+// - role=seller: return ONLY pickups where logged-in user is the seller
+// - no role: return all pickups for the user (backward compat, but NOT RECOMMENDED)
 export const getMyPickups = async (req, res) => {
   try {
-    const pickups = await Pickup.find({
-      $or: [{ sellerId: req.userId }, { buyerId: req.userId }]
-    })
+    const { role } = req.query;
+    let filter = {};
+
+    // Strict role-based filtering
+    if (role === "buyer") {
+      filter = { buyerId: req.userId };
+    } else if (role === "seller") {
+      filter = { sellerId: req.userId };
+    } else {
+      // No role specified: return all pickups for backward compatibility
+      // This is NOT recommended for UI use; always pass role parameter
+      filter = { $or: [{ sellerId: req.userId }, { buyerId: req.userId }] };
+    }
+
+    const pickups = await Pickup.find(filter)
       .populate("productId", "name image offerPrice location")
       .populate("sellerId", "name email phone location")
       .populate("buyerId", "name")

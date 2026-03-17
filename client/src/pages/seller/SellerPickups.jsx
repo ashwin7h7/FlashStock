@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import API from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 const STAGES = [
   { key: "WON_AUCTION", label: "Won Auction" },
@@ -45,6 +46,7 @@ const StatusTracker = ({ status }) => {
 };
 
 const SellerPickups = () => {
+  const { user } = useAuth();
   const [pickups, setPickups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -53,7 +55,7 @@ const SellerPickups = () => {
   useEffect(() => {
     const fetchPickups = async () => {
       try {
-        const { data } = await API.get("/pickups");
+        const { data } = await API.get("/pickups?role=seller");
         if (data.success) setPickups(data.pickups);
       } catch (err) {
         console.error(err);
@@ -84,6 +86,15 @@ const SellerPickups = () => {
 
   const isCompleted = (p) => p.status === "COMPLETED" || p.status === "completed";
   const isSellerPending = (p) => p.status === "WON_AUCTION" || p.status === "pending";
+  
+  // Backend now returns ONLY seller pickups (role=seller query param)
+  // This frontend filter is a defensive safety check only
+  const isSellerOwned = (pickup) => {
+    const sellerId = pickup?.sellerId?._id || pickup?.sellerId;
+    return sellerId && user?._id && String(sellerId) === String(user._id);
+  };
+
+  const sellerOwnedPickups = pickups.filter(isSellerOwned);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -96,13 +107,13 @@ const SellerPickups = () => {
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
 
-      {pickups.length === 0 ? (
+      {sellerOwnedPickups.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-400">
           No pickups yet.
         </div>
       ) : (
         <div className="space-y-5">
-          {pickups.map((p) => (
+          {sellerOwnedPickups.map((p) => (
             <div key={p._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               {/* Card Header */}
               <div className="flex items-center gap-4 p-5 border-b border-gray-50">
@@ -154,7 +165,12 @@ const SellerPickups = () => {
 
               {/* Action Area */}
               <div className="px-5 py-4 border-t border-gray-50">
-                {isCompleted(p) ? (
+                {!isSellerOwned(p) ? (
+                  <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-4 py-2.5 text-sm font-medium">
+                    <span>❌</span>
+                    <span>ERROR: This pickup should not appear in Seller Panel.</span>
+                  </div>
+                ) : isCompleted(p) ? (
                   <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-100 rounded-lg px-4 py-2.5 text-sm font-medium">
                     <span>✅</span>
                     <span>Transaction completed successfully</span>

@@ -59,7 +59,7 @@ const MyPickups = () => {
     const fetchPickups = async () => {
       try {
         const [pickupRes, ratingRes] = await Promise.all([
-          API.get("/pickups"),
+          API.get("/pickups?role=buyer"),
           API.get("/ratings/mine"),
         ]);
 
@@ -125,8 +125,8 @@ const MyPickups = () => {
       (sellerId && buyerId && String(sellerId) === String(buyerId)) ||
       (sellerId && user?._id && String(sellerId) === String(user._id));
 
-    if (isSelfRating) {
-      setError("You cannot rate your own account.");
+      if (isSelfRating) {
+        setError("You cannot rate your own account (self-rating prevention: buyerId === sellerId).");
       return;
     }
 

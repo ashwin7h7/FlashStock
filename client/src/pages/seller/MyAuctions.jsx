@@ -20,7 +20,7 @@ const MyAuctions = () => {
     try {
       const [prodRes, pickupRes] = await Promise.all([
         API.get("/product/my-products"),
-        API.get("/pickups"),
+        API.get("/pickups?role=seller"),
       ]);
       if (prodRes.data.success) setProducts(prodRes.data.products);
       if (pickupRes.data.success) setPickups(pickupRes.data.pickups);
