@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import API from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 import { getEndedAuctionState } from "../../utils/auctionState";
 
 const DashboardGlyph = ({ children }) => (
@@ -16,6 +17,7 @@ const SectionGlyph = ({ children }) => (
 );
 
 const SellerDashboard = () => {
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [pickups, setPickups] = useState([]);
@@ -68,7 +70,12 @@ const SellerDashboard = () => {
     return true;
   });
 
-  const pendingPickups = pickups.filter((p) => p.status === "pending");
+  const completedPickupStatuses = new Set(["COMPLETED", "completed"]);
+  const sellerPendingPickups = pickups.filter((pickup) => {
+    const sellerId = pickup?.sellerId?._id || pickup?.sellerId;
+    const isSellerOwned = sellerId && user?._id && String(sellerId) === String(user._id);
+    return isSellerOwned && !completedPickupStatuses.has(pickup.status);
+  });
 
   const getEndedStatus = (product) => {
     const { hasAcceptedBids } = getEndedAuctionState(product);
@@ -189,9 +196,9 @@ const SellerDashboard = () => {
     },
     {
       label: "Pending Pickups",
-      value: pendingPickups.length,
+      value: sellerPendingPickups.length,
       note: "Pickup requests pending confirmation.",
-      tone: pendingPickups.length > 0 ? "dashboard-card-danger" : "dashboard-card-success",
+      tone: sellerPendingPickups.length > 0 ? "dashboard-card-danger" : "dashboard-card-success",
       kicker: "Pickups",
       icon: (
         <DashboardGlyph>
@@ -277,7 +284,7 @@ const SellerDashboard = () => {
       to: "/seller/pickups",
       label: "Pickups",
       detail: "Manage pickup requests and status.",
-      tone: pendingPickups.length > 0 ? "dashboard-quick-link-warning" : "dashboard-quick-link-success",
+      tone: sellerPendingPickups.length > 0 ? "dashboard-quick-link-warning" : "dashboard-quick-link-success",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5h11.25v7.5H3.75z" />
