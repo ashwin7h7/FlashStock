@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import API from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 const STAGES = [
   { key: "WON_AUCTION", label: "Won Auction" },
@@ -45,6 +46,7 @@ const StatusTracker = ({ status }) => {
 };
 
 const MyPickups = () => {
+  const { user } = useAuth();
   const [pickups, setPickups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -116,6 +118,18 @@ const MyPickups = () => {
   };
 
   const submitRating = async (pickupId) => {
+    const pickup = pickups.find((item) => item._id === pickupId);
+    const sellerId = pickup?.sellerId?._id || pickup?.sellerId;
+    const buyerId = pickup?.buyerId?._id || pickup?.buyerId;
+    const isSelfRating =
+      (sellerId && buyerId && String(sellerId) === String(buyerId)) ||
+      (sellerId && user?._id && String(sellerId) === String(user._id));
+
+    if (isSelfRating) {
+      setError("You cannot rate your own account.");
+      return;
+    }
+
     const draft = ratingDrafts[pickupId] || { rating: 0, comment: "" };
     if (!draft.rating) {
       setError("Please select a star rating before submitting.");
@@ -180,6 +194,11 @@ const MyPickups = () => {
           {pickups.map((p) => (
             <div key={p._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               {(() => {
+                const sellerId = p.sellerId?._id || p.sellerId;
+                const buyerId = p.buyerId?._id || p.buyerId;
+                const isSelfRatingPickup =
+                  (sellerId && buyerId && String(sellerId) === String(buyerId)) ||
+                  (sellerId && user?._id && String(sellerId) === String(user._id));
                 const sellerPhone = p.sellerId?.phone?.trim() || "Phone not added yet";
                 const sellerLocation = p.sellerId?.location?.trim() || p.productId?.location || "Not added yet";
                 return (
@@ -272,6 +291,10 @@ const MyPickups = () => {
                         {ratingsByPickup[p._id].comment && (
                           <p className="text-xs text-gray-600 mt-1">"{ratingsByPickup[p._id].comment}"</p>
                         )}
+                      </div>
+                    ) : isSelfRatingPickup ? (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                        <p className="text-sm font-semibold text-amber-800">You cannot rate your own account.</p>
                       </div>
                     ) : (
                       <div className="rounded-lg border border-gray-200 p-3">

@@ -33,6 +33,14 @@ export const submitSellerRating = async (req, res) => {
       return res.status(403).json({ success: false, message: "Only the winning buyer can rate this seller" });
     }
 
+    const isSelfRating =
+      pickup.buyerId.toString() === pickup.sellerId.toString() ||
+      pickup.sellerId.toString() === req.userId.toString();
+
+    if (isSelfRating) {
+      return res.status(400).json({ success: false, message: "You cannot rate your own account." });
+    }
+
     if (!COMPLETED_STATUSES.includes(pickup.status)) {
       return res.status(400).json({ success: false, message: "You can rate the seller only after pickup is completed" });
     }
