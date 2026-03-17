@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import API from "../../api/axios";
+import { filterNotificationsByRole } from "../../utils/notificationRole";
+
+const NOTIFICATION_ROLE = "buyer";
 
 const DashboardGlyph = ({ children }) => (
   <span className="dashboard-stat-icon" aria-hidden="true">
@@ -60,9 +63,9 @@ const BuyerDashboard = () => {
           setActiveBids(bidsRes.data.items);
         }
 
-        const notifRes = await API.get("/notifications");
+        const notifRes = await API.get(`/notifications?role=${NOTIFICATION_ROLE}`);
         if (notifRes.data.success) {
-          setNotifications(notifRes.data.notifications);
+          setNotifications(filterNotificationsByRole(notifRes.data.notifications, NOTIFICATION_ROLE));
         }
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
@@ -77,7 +80,7 @@ const BuyerDashboard = () => {
 
   if (loading) return <div className="py-20 text-center">Loading...</div>;
 
-  const unreadNotifications = notifications.filter((n) => !n.isRead);
+  const unreadNotifications = filterNotificationsByRole(notifications, NOTIFICATION_ROLE).filter((n) => !n.isRead);
 
   const stats = [
     {

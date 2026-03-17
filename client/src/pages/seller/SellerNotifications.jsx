@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import API from "../../api/axios";
+import { filterNotificationsByRole } from "../../utils/notificationRole";
+
+const PANEL_ROLE = "seller";
 
 const SellerNotifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -9,24 +12,35 @@ const SellerNotifications = () => {
   const [markingId, setMarkingId] = useState("");
 
   useEffect(() => {
+    let isActive = true;
+
+    setNotifications([]);
+    setError("");
+    setLoading(true);
+
     const fetch = async () => {
       try {
-        const { data } = await API.get("/notifications");
-        if (data.success) setNotifications(data.notifications);
+        const { data } = await API.get(`/notifications?role=${PANEL_ROLE}`);
+        if (isActive && data.success) setNotifications(data.notifications);
       } catch (err) {
         console.error(err);
-        setError("Failed to load notifications.");
+        if (isActive) setError("Failed to load notifications.");
       } finally {
-        setLoading(false);
+        if (isActive) setLoading(false);
       }
     };
+
     fetch();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const markAllRead = async () => {
     setMarkingAll(true);
     try {
-      await API.patch("/notifications/read-all");
+      await API.patch(`/notifications/read-all?role=${PANEL_ROLE}`);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {
       console.error(err);
@@ -39,7 +53,7 @@ const SellerNotifications = () => {
   const markRead = async (id) => {
     setMarkingId(id);
     try {
-      await API.patch(`/notifications/${id}/read`);
+      await API.patch(`/notifications/${id}/read?role=${PANEL_ROLE}`);
       setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
     } catch (err) {
       console.error(err);
@@ -51,7 +65,8 @@ const SellerNotifications = () => {
 
   if (loading) return <div className="text-center py-20">Loading...</div>;
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const sellerNotifications = filterNotificationsByRole(notifications, PANEL_ROLE);
+  const unreadCount = sellerNotifications.filter((n) => !n.isRead).length;
 
   return (
     <div>
@@ -72,11 +87,11 @@ const SellerNotifications = () => {
           {error}
         </div>
       )}
-      {notifications.length === 0 ? (
+      {sellerNotifications.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">No notifications yet.</div>
       ) : (
         <div className="space-y-3">
-          {notifications.map((n) => (
+          {sellerNotifications.map((n) => (
             <div
               key={n._id}
               onClick={() => !n.isRead && markRead(n._id)}

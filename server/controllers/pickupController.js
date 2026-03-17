@@ -83,7 +83,7 @@ export const confirmPickupBySeller = async (req, res) => {
 
     await Notification.create({
       userId: pickup.buyerId,
-      type: "pickup_ready",
+      type: "pickup_ready_buyer",
       title: "Item ready for pickup!",
       message: "The seller has marked your item as ready for pickup. Please confirm when you collect it.",
       relatedProductId: pickup.productId
@@ -130,14 +130,14 @@ export const confirmPickupByBuyer = async (req, res) => {
 
     await Notification.create({
       userId: pickup.buyerId,
-      type: "pickup_completed",
+      type: "pickup_completed_buyer",
       title: "Pickup completed!",
       message: "You have confirmed the pickup. Transaction is complete.",
       relatedProductId: pickup.productId
     });
     await Notification.create({
       userId: pickup.sellerId,
-      type: "pickup_completed",
+      type: "pickup_completed_seller",
       title: "Pickup completed!",
       message: "The buyer has confirmed the pickup. Transaction is complete.",
       relatedProductId: pickup.productId

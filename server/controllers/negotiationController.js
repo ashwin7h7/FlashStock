@@ -169,7 +169,7 @@ export const startNegotiation = async (req, res) => {
     // Notify seller
     await notify({
       userId: product.sellerId,
-      type: "negotiation_started",
+      type: "negotiation_started_seller",
       title: "New negotiation request",
       message: `A buyer has started a negotiation for your product "${product.name}".`,
       relatedProductId: product._id,
@@ -366,7 +366,14 @@ export const sendMessage = async (req, res) => {
 
     await notify({
       userId: recipientId,
-      type: type === "offer" ? "negotiation_offer" : "negotiation_message",
+      type:
+        type === "offer"
+          ? String(recipientId) === String(negotiation.sellerId)
+            ? "negotiation_offer_seller"
+            : "negotiation_offer_buyer"
+          : String(recipientId) === String(negotiation.sellerId)
+            ? "negotiation_message_seller"
+            : "negotiation_message_buyer",
       title: notifTitle,
       message: notifMsg,
       relatedProductId: negotiation.productId,
@@ -488,7 +495,10 @@ export const acceptOffer = async (req, res) => {
     // Notify the offer sender that their offer was accepted
     await notify({
       userId: latestOfferSenderId,
-      type: "negotiation_accepted",
+      type:
+        String(latestOfferSenderId) === String(negotiation.sellerId)
+          ? "negotiation_accepted_seller"
+          : "negotiation_accepted_buyer",
       title: "Your offer was accepted!",
       message: `Your offer of Rs. ${amount} for "${negotiation.productId?.name || "a product"}" has been accepted. The auction is now closed by negotiation.`,
       relatedProductId: negotiation.productId?._id || negotiation.productId,
@@ -496,7 +506,7 @@ export const acceptOffer = async (req, res) => {
 
     await notify({
       userId: negotiation.sellerId,
-      type: "negotiation_sale_closed",
+      type: "negotiation_sale_closed_seller",
       title: "Product sold by negotiation",
       message: `"${negotiation.productId?.name || "A product"}" was closed by negotiation for Rs. ${amount}.`,
       relatedProductId: negotiation.productId?._id || negotiation.productId,
@@ -504,7 +514,7 @@ export const acceptOffer = async (req, res) => {
 
     await notify({
       userId: winningBuyerId,
-      type: "negotiation_sale_closed",
+      type: "negotiation_sale_closed_buyer",
       title: "You secured the product by negotiation",
       message: `You agreed to purchase "${negotiation.productId?.name || "a product"}" for Rs. ${amount}.`,
       relatedProductId: negotiation.productId?._id || negotiation.productId,
@@ -587,7 +597,10 @@ export const rejectOffer = async (req, res) => {
     const product = await Product.findById(negotiation.productId).select("name");
     await notify({
       userId: latestOfferSenderId,
-      type: "negotiation_rejected",
+      type:
+        String(latestOfferSenderId) === String(negotiation.sellerId)
+          ? "negotiation_rejected_seller"
+          : "negotiation_rejected_buyer",
       title: "Your offer was rejected",
       message: `Your offer for "${product?.name || "a product"}" was rejected. You can make a new offer.`,
       relatedProductId: negotiation.productId,

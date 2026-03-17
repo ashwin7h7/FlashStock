@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { getEndedAuctionState } from "../../utils/auctionState";
+import { filterNotificationsByRole } from "../../utils/notificationRole";
+
+const NOTIFICATION_ROLE = "seller";
 
 const DashboardGlyph = ({ children }) => (
   <span className="dashboard-stat-icon" aria-hidden="true">
@@ -30,12 +33,14 @@ const SellerDashboard = () => {
       try {
         const [productRes, notificationRes, pickupRes] = await Promise.all([
           API.get("/product/my-products"),
-          API.get("/notifications"),
+          API.get(`/notifications?role=${NOTIFICATION_ROLE}`),
           API.get("/pickups"),
         ]);
 
         if (productRes.data.success) setProducts(productRes.data.products);
-        if (notificationRes.data.success) setNotifications(notificationRes.data.notifications);
+        if (notificationRes.data.success) {
+          setNotifications(filterNotificationsByRole(notificationRes.data.notifications, NOTIFICATION_ROLE));
+        }
         if (pickupRes.data.success) setPickups(pickupRes.data.pickups);
       } catch (err) {
         console.error(err);
@@ -59,7 +64,7 @@ const SellerDashboard = () => {
 
   const activeAuctions = products.filter((p) => p.isAuction && p.auctionStatus === "active");
   const endedAuctions = products.filter((p) => p.isAuction && p.auctionStatus === "ended");
-  const unreadNotifications = notifications.filter((n) => !n.isRead);
+  const unreadNotifications = filterNotificationsByRole(notifications, NOTIFICATION_ROLE).filter((n) => !n.isRead);
 
   const productsReadyForAuction = products.filter((p) => {
     const { hasAcceptedBids } = getEndedAuctionState(p);
@@ -110,7 +115,7 @@ const SellerDashboard = () => {
     .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
     .slice(0, 4);
 
-  const recentNotifications = [...notifications]
+  const recentNotifications = [...filterNotificationsByRole(notifications, NOTIFICATION_ROLE)]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
